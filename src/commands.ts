@@ -2,7 +2,7 @@ import { goke } from 'goke'
 import { z } from 'zod'
 import { run } from './run.ts'
 
-export const cli = goke('work-calendar-local')
+export const cli = goke('weektrace')
 for (const mode of ['report', 'collect', 'render'] as const) {
   cli.command(mode, mode === 'report' ? 'Collect evidence and generate an offline weekly report'
     : mode === 'collect' ? 'Collect sanitized local evidence' : 'Render cached evidence with an optional curated summary')
@@ -16,7 +16,7 @@ for (const mode of ['report', 'collect', 'render'] as const) {
     .option('--exclude-session <id>', z.array(z.string()).describe('Reporting session ID to exclude (repeatable)'))
     .option('--summary <path>', z.string().describe('Curated three-line summary JSON'))
     .option('--theme <name>', z.enum(['Pink', 'Lavender', 'Blue', 'Green', 'Peach']).describe('Default theme; browser choice takes precedence'))
-    .example(`work-calendar-local ${mode} --previous-week`)
+    .example(`weektrace ${mode} --previous-week`)
     .action(async (options, { console, process }) => {
       const result = await run({ mode, options, cwd: process.cwd })
       if (result instanceof Error) { console.error(result.message); process.exit(1); return }

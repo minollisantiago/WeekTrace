@@ -17,13 +17,13 @@
 1. Read the task and [report contract](report-contract.md). Resolve the explicit
    reporting Monday, or use `--previous-week` for the previous complete local week.
    Respect the user's timezone and project filters.
-2. Use the installed local `work-calendar-local` binary, or `node dist/cli.js` from
+2. Use the installed local `weektrace` binary, or `node dist/cli.js` from
    a built source checkout. Confirm `--help`. Runtime defaults to `~/.calendar`;
    override `--data-dir` or `--output-dir` when requested. The CLI creates directories.
 3. Run collection, excluding this report-generation session explicitly:
 
    ```sh
-   work-calendar-local collect --previous-week --exclude-session CURRENT_RUN_SESSION_ID
+   weektrace collect --previous-week --exclude-session CURRENT_RUN_SESSION_ID
    ```
 
    Without a locally installed binary, run this from the built checkout instead:
@@ -62,7 +62,7 @@
 6. Render using the same week/configuration:
 
    ```sh
-   work-calendar-local render --previous-week --exclude-session CURRENT_RUN_SESSION_ID
+   weektrace render --previous-week --exclude-session CURRENT_RUN_SESSION_ID
    ```
 
    Source-checkout equivalent:

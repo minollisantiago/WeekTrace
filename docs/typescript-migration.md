@@ -27,14 +27,16 @@ the compiler rewrites them to `.js` in `dist/`.
 - `src/adapters/`: Kimaki discovery, validated OpenCode GET responses, Git subprocesses.
 - `src/schema.ts`, `evidence.ts`, `time.ts`, `report.ts`: evidence and deterministic calculations.
 - `src/render.ts`: package-relative asset loading and safe one-pass embedding.
+- `assets/weektrace.svg`: approved WeekTrace handwritten W mark.
 - `helpers/template.html`, `fonts/`: shared approved design and offline assets.
 - `helpers/*.py`: untouched Python reference engine and eight regression tests.
 - `scripts/verify-package.mjs`: local tarball inspection and installed CLI execution.
 
 Keeping one shared template avoids divergent Python/TypeScript designs and retains
 the separately approved hover-card improvements committed during migration planning.
-Only date-label and configurable theme-default plumbing changed in the template.
-Python reports retain their existing date fallback and pink theme default.
+The template includes WeekTrace's approved identity and embedded favicon, plus
+timezone-correct date labels and configurable theme defaults. Python reports retain
+their existing date fallback and pink theme default.
 
 ## CLI and runtime
 
@@ -66,10 +68,12 @@ required for parity development tests only; shipped report generation uses Node.
 
 ## Publication remains deferred
 
-`work-calendar-local` and version `0.0.0` are local placeholders, not a chosen
-public identity. The package is private; public package name, code license, remote
-repository, repository/homepage/bug metadata, and publishing workflow remain
-undecided. No public registry command is documented as available.
+The approved product identity is **WeekTrace**, with `weektrace` as the local
+package/bin name. Version `0.0.0` and private status remain in place. Registry-name
+availability, code license, and npm publishing workflow remain deferred. Source is
+hosted at [minollisantiago/WeekTrace](https://github.com/minollisantiago/WeekTrace),
+with repository/homepage/issue metadata configured. No public registry command is
+documented as available.
 
 Scheduling and delivery remain Kimaki/OS orchestration. Existing task #1 in TsCanvas
 is preserved and continues to use its existing Python workflow until the user

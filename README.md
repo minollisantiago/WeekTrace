@@ -1,4 +1,8 @@
-# Work Calendar
+# WeekTrace
+
+<img src="assets/weektrace.svg" width="96" alt="WeekTrace handwritten W logo">
+
+**Your agent work, week by week.**
 
 Generate a self-contained weekly HTML calendar from locally retained OpenCode
 sessions, registered Kimaki projects, and Git evidence. Reports open offline,
@@ -6,8 +10,10 @@ with an embedded font, theme picker, keyboard-accessible details, and phone agen
 
 The shared **Node.js/TypeScript CLI** now handles on-demand and scheduler-driven
 generation. The Python helpers remain a reference implementation. No package has
-been published; `work-calendar-local` is a temporary private package/bin name.
-Public package naming, repository metadata, and the project license remain undecided.
+been published. The approved product name is **WeekTrace**, with `weektrace` as
+the private local package and CLI name. Source lives at
+[minollisantiago/WeekTrace](https://github.com/minollisantiago/WeekTrace).
+Registry availability is not yet checked; the project license remains undecided.
 The bundled font retains its SIL Open Font License.
 
 ## 1. Install and run locally
@@ -17,6 +23,8 @@ servers retaining the sessions to report. Python 3.9+ is needed only for baselin
 parity tests, not for the installed CLI.
 
 ```sh
+git clone https://github.com/minollisantiago/WeekTrace.git
+cd WeekTrace
 npm ci
 npm run build
 node dist/cli.js report --previous-week
@@ -117,14 +125,14 @@ Personal `evidence/`, `weeks/`, `preferences.json`, `config.json`, and
 ```sh
 npm pack --pack-destination weeks
 # Substitute the absolute path printed by npm pack.
-npm install --prefix /path/to/local-install /absolute/path/to/work-calendar-local-0.0.0.tgz
-npm exec --prefix /path/to/local-install -- work-calendar-local report --previous-week
+npm install --prefix /path/to/local-install /absolute/path/to/weektrace-0.0.0.tgz
+npm exec --prefix /path/to/local-install -- weektrace report --previous-week
 ```
 
 `npm exec` is npm's `npx` execution interface. From the local installation,
-`npx --no-install work-calendar-local report --previous-week` also runs the CLI.
+`npx --no-install weektrace report --previous-week` also runs the CLI.
 There is no registry installation command yet. The package is private and its
-publication script is disabled pending naming/license decisions.
+publication script is disabled pending registry and licensing decisions.
 
 ## 5. Scheduling and Discord delivery
 
@@ -142,8 +150,8 @@ Read [operations](docs/operations.md) before generating or attaching a report.
 ## Shell completions
 
 For a local installed binary, enable completion with
-`work-calendar-local completions install`, then restart your shell. Remove it
-with `work-calendar-local completions uninstall`. From source, use
+`weektrace completions install`, then restart your shell. Remove it
+with `weektrace completions uninstall`. From source, use
 `node dist/cli.js completions script --shell bash` to inspect the script first.
 
 ## Verify and develop
@@ -164,3 +172,10 @@ For UI changes, verify offline opening, themes, keyboard details/Escape/focus,
 phone agenda, 1032px stacking, and wide alignment. See
 [helper/design reference](helpers/README.md) and
 [migration status](docs/typescript-migration.md).
+
+## Brand
+
+WeekTrace uses the approved continuous handwritten **W** trace, a lowercase
+`weektrace` wordmark, rose `#F23568`, and the tagline above. The report embeds its
+mark and favicon for offline viewing. See [branding](docs/branding.md) for assets
+and usage. Existing `~/.calendar` runtime paths retain their names for continuity.

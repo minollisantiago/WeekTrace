@@ -1,4 +1,4 @@
-# Generate a weekly work calendar
+# Generate a WeekTrace weekly report
 
 Read `~/.calendar/README.md`, `~/.calendar/docs/operations.md`, and
 `~/.calendar/docs/report-contract.md` before generating a report.

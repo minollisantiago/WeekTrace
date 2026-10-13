@@ -7,7 +7,7 @@ import { fixture } from './fixtures.ts'
 import { resolveConfig } from './config.ts'
 
 test('CLI keeps repeatable source and reporting-session selections', async () => {
-  const parsed = await cli.clone().parse(['node', 'work-calendar-local', 'report', '--week', '2026-10-05',
+  const parsed = await cli.clone().parse(['node', 'weektrace', 'report', '--week', '2026-10-05',
     '--project', '/one', '--project', '/two', '--exclude-session', 'ses_one', '--exclude-session', 'ses_two'], { run: false })
   expect(parsed.options).toMatchObject({ week: '2026-10-05', project: ['/one', '/two'], excludeSession: ['ses_one', 'ses_two'] })
 })

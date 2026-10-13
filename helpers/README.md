@@ -1,4 +1,8 @@
-# Weekly work calendar helpers
+# WeekTrace report helpers
+
+The shared template embeds WeekTrace's approved handwritten W and favicon; the
+editable mark is `assets/weektrace.svg`. Brand rose stays `#F23568`, independently
+of the report's five selectable theme accents. See `docs/branding.md`.
 
 The Node.js/TypeScript CLI is now the portable generation engine. See the root
 README for `report`, `collect`, `render`, configuration, and local tarball setup.

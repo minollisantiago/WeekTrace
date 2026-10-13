@@ -1,9 +1,16 @@
 {
-  "name": "work-calendar-local",
+  "name": "weektrace",
   "version": "0.0.0",
   "private": true,
-  "description": "Offline weekly reports from local OpenCode, Kimaki and Git evidence",
+  "description": "Your agent work, week by week. Offline reports from local OpenCode, Kimaki and Git evidence.",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/minollisantiago/WeekTrace.git",
+    "directory": "."
+  },
+  "homepage": "https://github.com/minollisantiago/WeekTrace#readme",
+  "bugs": { "url": "https://github.com/minollisantiago/WeekTrace/issues" },
   "engines": {
     "node": ">=22"
   },
@@ -35,6 +42,7 @@
   "files": [
     "src",
     "dist",
+    "assets",
     "helpers/template.html",
     "helpers/README.md",
     "fonts",

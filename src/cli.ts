@@ -5,7 +5,7 @@ import { CalendarError } from './errors.ts'
 
 const require = module.createRequire(import.meta.url)
 cli.version((require('../package.json') as { version: string }).version)
-const result = await cli.parse().catch(cause => new CalendarError({ reason: 'CLI failed. Check arguments with work-calendar-local --help and rerun.', cause }))
+const result = await cli.parse().catch(cause => new CalendarError({ reason: 'CLI failed. Check arguments with weektrace --help and rerun.', cause }))
 if (result instanceof Error) {
   console.error(result.cause instanceof Error ? result.cause.message : result.message)
   process.exitCode = 1
