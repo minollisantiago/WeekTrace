@@ -68,22 +68,30 @@ assets, or service. JetBrains Mono is embedded from `fonts/JetBrainsMono-Regular
 with its SIL Open Font License included in the HTML; no font request is needed.
 Compact blocks hide their labels using size container queries and reveal details
 on hover or keyboard focus. Event previews in the grid and agenda use structured
-dark cards with a bold title, muted date/time/duration line, a project pill, models,
+theme-aware cards with a bold title, muted date/time/duration line, a project pill, models,
 commit and unique changed-file counts, first prompt and up to three commit subjects.
 Only confirmed session commits supply these counts; possible matches are excluded.
 Previews sit to the right when space allows and fit above/below on narrow screens,
 remain open when hovered, and dismiss with Escape or scrolling. Touch opens the inspection
 dialog directly. Striped fills with 2px `#ff6665` borders distinguish
 sessions without confirmed linked commits; other event cards stay borderless.
-The segmented theme picker sits above the calendar, aligned to its right edge.
+The segmented accent picker and sun/moon appearance toggle sit in the header's
+top-right corner, aligned to the summary card's right edge. On narrow phones they
+wrap below the brand, retaining that right alignment.
 It offers a lighter Pink `#F77C9D` (default), Lavender
 `#B1A7F2`, Blue `#88C1F2`, Green `#8FD9AF`, and Peach `#F2BE7E`. It updates
 event fills, activity bars, active controls, links, and the inspection border.
 Non-commit borders remain `#ff6665`; project identity colors remain separate.
 The selected swatch has a checkmark. Tab/Enter and arrow keys work; the selection
 is restored from browser local storage when available, otherwise pink is used.
-The toolbar and content share a centered 1900px maximum width, gutters, and grid
-tracks, keeping the right-aligned palette aligned with the calendar at wide sizes.
+Light/dark appearance is independent of the accent. It follows the device preference
+until manually selected, then persists in `work-calendar-appearance` when storage
+is available. The saved appearance is applied before paint; device changes update
+the report while no manual override exists. Backgrounds, text, grid rules, agenda,
+striped blocks, previews, dialogs, links and focus indicators adapt to both modes.
+All controls remain embedded and work offline, including when storage is unavailable.
+The header, toolbar and content share a centered 1900px maximum width and gutters,
+keeping the appearance controls aligned with the summary at wide sizes.
 Calendar and summary stack vertically at 1032px and below; the calendar grid remains
 available above the 760px phone breakpoint, where the agenda becomes the default.
 The layout fits the viewport; the calendar/agenda and summary scroll internally
