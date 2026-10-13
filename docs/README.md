@@ -5,7 +5,7 @@ project scope, scheduling, external-user setup, and the Python/Node.js decision.
 
 - [Operations](operations.md): the agent's generation, verification, and delivery recipe.
 - [Report contract](report-contract.md): evidence, time, commits, branches, and output semantics.
-- [TypeScript migration](typescript-migration.md): proposed architecture, CLI, sequence, and acceptance criteria.
+- [TypeScript migration](typescript-migration.md): implemented architecture, CLI, verification, and deferred publication decisions.
 
 The portable [weekly task](../tasks/weekly-work-calendar.md) links the reporting
 workflow; [AGENTS.md](../AGENTS.md) routes development agents to the relevant docs.

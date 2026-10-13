@@ -1,0 +1,64 @@
+{
+  "name": "work-calendar-local",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Offline weekly reports from local OpenCode, Kimaki and Git evidence",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "opencode",
+    "kimaki",
+    "calendar",
+    "activity-report",
+    "offline"
+  ],
+  "bin": "dist/cli.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./src": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./src/*": {
+      "types": "./src/*.ts",
+      "default": "./src/*.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "dist",
+    "helpers/template.html",
+    "helpers/README.md",
+    "fonts",
+    "docs",
+    "AGENTS.md",
+    "tasks"
+  ],
+  "scripts": {
+    "build": "tsc && chmod +x dist/cli.js",
+    "test": "vitest run",
+    "check": "npm run build && npm test",
+    "verify:package": "npm run build && node scripts/verify-package.mjs",
+    "prepack": "npm run build",
+    "prepublishOnly": "node -e \"console.error('Publication is not configured'); process.exit(1)\""
+  },
+  "dependencies": {
+    "@js-temporal/polyfill": "^0.5.1",
+    "errore": "^0.14.1",
+    "goke": "^6.17.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11"
+  }
+}

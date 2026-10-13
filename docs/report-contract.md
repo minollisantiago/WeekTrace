@@ -18,8 +18,10 @@ Query available actual message/tool times, not Kimaki's SQLite storage.
 
 ## Time
 
-The baseline reports Monday–Sunday in America/Argentina/Buenos_Aires: start
-inclusive at Monday 00:00, end exclusive at the next Monday 00:00.
+Reports use the configured IANA timezone (default America/Argentina/Buenos_Aires):
+start inclusive at Monday 00:00, end exclusive at the next Monday 00:00. The
+TypeScript engine uses local calendar boundaries, including DST; the Python
+reference retains its fixed Buenos Aires timezone.
 
 - Group events until a gap exceeds 30 minutes.
 - Clip intervals to the week and split them visually at local midnight.

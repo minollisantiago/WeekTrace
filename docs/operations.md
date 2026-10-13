@@ -1,33 +1,46 @@
 # Operations
 
-## Current capabilities and limits
+## Current capabilities
 
-- Collection uses Kimaki project discovery and documented local OpenCode GET APIs.
-- Evidence scope is all locally registered projects; there is no project filter.
-- `--week` and `--api` are explicit. The collector's default localhost port is
-  machine-specific; discover the active port instead of relying on that default.
-- Reporting timezone is fixed to `America/Argentina/Buenos_Aires` in the helpers.
-- Python generation is deterministic given evidence, summary, and preferences.
-- Agent-written summaries and browser verification are orchestration steps.
-- Uploads use the current Kimaki session ID; Python does not send attachments.
-- This baseline is not an npm package and has no standalone cron/date wrapper.
+- Node.js/TypeScript `report`, `collect`, and `render` share one engine.
+- Collection discovers locally registered Kimaki projects and per-project OpenCode
+  servers through CLI output, verifies `/doc`, and uses documented GET APIs.
+- Default source scope is all local registrations; repeatable `--project` selects
+  registered source directories. Git alone cannot establish session durations.
+- Reporting timezone is configurable, with Buenos Aires retained as the default.
+- Generation is deterministic given evidence, configuration, summary, and colors.
+- Agent-written narratives, browser checks, scheduling, and uploads are orchestration.
+- The private local package is installable from a tarball; registry publication is deferred.
 
 ## Execute an agent-assisted report
 
-1. Read the task and [report contract](report-contract.md). Resolve the requested
-   Monday; absent explicit dates, choose the previous complete local Monday–Sunday.
-2. Confirm `~/.calendar/` contains helpers/fonts and the runtime directories.
-3. Discover local projects with `kimaki project list --json`. Use
-   `kimaki session list --project /absolute/path --json` to confirm OpenCode
-   availability and obtain the active server port from CLI discovery output.
-4. Run `collect.py --week YYYY-MM-DD --api http://127.0.0.1:PORT`. Completion means
-   the evidence JSON exists and every unavailable source is recorded as a gap.
-5. Inspect response excerpts and commit evidence. Exclude the current reporting
-   session and represented subagents from work totals. The collector's title-based
-   report-session exclusions are a baseline heuristic; reconcile explicit current
-   report IDs if needed before rendering.
-6. Write `evidence/YYYY-MM-DD-summary.json` with exactly three factual lines and
-   follow-ups tied to real session IDs:
+1. Read the task and [report contract](report-contract.md). Resolve the explicit
+   reporting Monday, or use `--previous-week` for the previous complete local week.
+   Respect the user's timezone and project filters.
+2. Use the installed local `work-calendar-local` binary, or `node dist/cli.js` from
+   a built source checkout. Confirm `--help`. Runtime defaults to `~/.calendar`;
+   override `--data-dir` or `--output-dir` when requested. The CLI creates directories.
+3. Run collection, excluding this report-generation session explicitly:
+
+   ```sh
+   work-calendar-local collect --previous-week --exclude-session CURRENT_RUN_SESSION_ID
+   ```
+
+   Without a locally installed binary, run this from the built checkout instead:
+
+   ```sh
+   node dist/cli.js collect --previous-week --exclude-session CURRENT_RUN_SESSION_ID
+   ```
+
+   For an explicit week, replace `--previous-week` with `--week YYYY-MM-DD`.
+   Apply the same timezone, project, data-directory, and exclusion options to
+   subsequent commands. No fixed OpenCode port is assumed; pass `--api` only
+   when discovery is unavailable or an explicit server is requested.
+4. Inspect sanitized evidence and actual final response excerpts. Check source gaps,
+   represented subagents, commit links, and timing coverage. Missing Git evidence,
+   missing finals, current idle status, and commit absence are distinct facts.
+5. Write `DATA_DIR/evidence/YYYY-MM-DD-summary.json`, or supply another file with
+   `--summary`. The shape is:
 
    ```json
    {
@@ -42,49 +55,76 @@
    }
    ```
 
-   Use an empty `followups` list if none are evidenced. Do not infer unfinished
-   work from missing commits. The renderer supplies a neutral fallback if this
-   file is omitted.
-7. Run `generate.py --week YYYY-MM-DD`. Confirm HTML and the adjacent three-line
-   Markdown summary exist under `weeks/` and match the requested week.
-8. Verify the output is self-contained and works without network requests. For
-   changed timing/attribution code, run the relevant tests. For changed UI, inspect
-   desktop/mobile, long-title details, keyboard/Escape, theme choices, 1032px
-   stacking, and toolbar/content alignment above 1900px.
-9. Upload the HTML, and a preview when available:
+   Use exactly three nonempty single lines; use an empty `followups` list when none
+   are evidenced. Follow-up IDs must be present in the selected report. Do not infer
+   unfinished work from missing commits. Omitted curated input produces a neutral
+   factual fallback without an LLM.
+6. Render using the same week/configuration:
 
    ```sh
-   kimaki upload-to-discord --session CURRENT_RUN_SESSION_ID \
-     /absolute/path/to/report.html
+   work-calendar-local render --previous-week --exclude-session CURRENT_RUN_SESSION_ID
    ```
 
-   Obtain the run ID from current session metadata, not historical logs or a
-   parent session. Report delivery success only after the upload succeeds.
-10. Send a concise summary with dates, accomplishments, most-active project,
-    evidenced follow-ups, and coverage gaps. Explain the downloaded HTML opens in
-    a browser. Deliver an empty-state report only when the week is genuinely empty.
+   Source-checkout equivalent:
 
-## Schedule and delivery
+   ```sh
+   node dist/cli.js render --previous-week --exclude-session CURRENT_RUN_SESSION_ID
+   ```
 
-A recurring `kimaki send --send-at 'CRON'` creates a reporting-agent run at each
-occurrence. Cron is UTC; reporting-week boundaries are local time. Choose delivery
-with an existing registered `--project` or a Discord `--channel`.
+   `report` combines collection/rendering for deterministic on-demand or OS-scheduled
+   runs. It reads an existing summary or uses the fallback. `render` requires cached
+   evidence boundaries to match the requested timezone/week; recollect when they differ.
+7. Confirm the HTML and adjacent three-line Markdown exist under the selected output
+   directory. Inspect estimates and gaps before calling the week empty. A partial
+   report records unavailable sources and emits a coverage warning on stderr;
+   validation or fatal setup failures exit nonzero. Successful partial output is retained.
+8. Verify offline opening and zero network requests. For engine changes, run
+   `npm run check` plus the Python reference tests. For renderer changes, check
+   details, long titles, keyboard/Escape/focus restoration, theme choices, phone
+   agenda, 1032px stacking, and toolbar alignment above 1900px.
+9. Upload with this run's current Kimaki session ID:
 
-On the original machine, task #1 remains in TsCanvas and reads the task file in
-that repository. Its schedule is Monday 12:00 UTC, or 09:00 Buenos Aires. The new
-standalone source project is for development; registering its channel does not
-retarget that existing scheduled task.
+   ```sh
+   kimaki upload-to-discord --session CURRENT_RUN_SESSION_ID /absolute/path/to/report.html
+   ```
 
-For another machine, copy this source bundle to `~/.calendar/`, configure
-Kimaki/OpenCode, register source projects, test one explicit week, and then create
-one recurring task pointing to the portable task in this repository. Reuse the
-same helpers/template on scheduled and on-demand runs.
+   Current run metadata supplies the destination, not historical prompts or parent
+   session IDs. Claim delivery success only after upload succeeds. Preserve artifacts
+   for retry when delivery fails.
+10. Send a concise result with dates, evidenced accomplishments, most-active project,
+    explicit follow-ups, and coverage gaps. Explain that the downloaded HTML opens
+    directly in a browser.
 
-An optional Git-ignored `local-profile.json` can supply agent-only delivery
-preferences, such as a Discord owner ID to mention when reports are ready. The
-Python helpers do not parse this file. Prefer current run metadata for the thread
-and project; if no owner is configured, attach the report without guessing a user.
+## Scheduling and existing deployment
 
-The host and integrations must be available at execution time. Do not assume
-missed executions are automatically replayed; generate the explicit missing week
-on demand when necessary.
+Kimaki recurring prompts or OS cron/task schedulers invoke the same CLI. Kimaki cron
+is UTC; report-week boundaries are local and DST-aware. Choose the scheduler time
+separately from the reporting timezone, with no assumption that missed runs replay.
+
+Existing task #1 remains in TsCanvas, reads its task file there, and runs Monday
+`0 12 * * 1`. This migration does not move, replace, or edit it. Python helpers
+remain available for that existing workflow. A switch requires explicit user approval.
+
+For a new deployment, install the local tarball, configure source registrations and
+timezone, verify an explicit week and a previous-week invocation, then configure
+one external scheduler. Delivery-project/channel selection is independent of the
+CLI's source-project filters. The host, Kimaki, and local OpenCode servers must be
+available at execution time.
+
+Optional ignored `local-profile.json` supplies agent-only delivery preferences,
+such as a Discord owner ID to mention. The CLI does not parse it. Without configured
+preferences, attach without guessing an owner.
+
+## Python reference workflow
+
+The preserved source-checkout commands are:
+
+```sh
+python helpers/collect.py --week YYYY-MM-DD --api http://127.0.0.1:PORT
+python helpers/generate.py --week YYYY-MM-DD
+python helpers/test_timing.py
+python helpers/test_branches.py
+```
+
+Python uses the original fixed `~/.calendar` asset/runtime layout, fixed Buenos
+Aires timezone, and all-project scope. It does not implement the new CLI flags.

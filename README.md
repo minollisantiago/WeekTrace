@@ -1,167 +1,166 @@
 # Work Calendar
 
-A personal weekly calendar of coding-agent activity, generated from locally
-retained OpenCode sessions and Git evidence. One self-contained HTML file opens
-offline in a browser; no application server or frontend framework is needed to
-view it.
+Generate a self-contained weekly HTML calendar from locally retained OpenCode
+sessions, registered Kimaki projects, and Git evidence. Reports open offline,
+with an embedded font, theme picker, keyboard-accessible details, and phone agenda.
 
-This repository captures the working **Python baseline** before a planned
-Node.js/TypeScript migration. There is no published npm package or working `npx`
-command yet.
+The shared **Node.js/TypeScript CLI** now handles on-demand and scheduler-driven
+generation. The Python helpers remain a reference implementation. No package has
+been published; `work-calendar-local` is a temporary private package/bin name.
+Public package naming, repository metadata, and the project license remain undecided.
+The bundled font retains its SIL Open Font License.
 
-## What it does
+## 1. Install and run locally
 
-- Displays a Monday–Sunday calendar with selectable session intervals and an agenda.
-- Estimates activity from actual message/tool timestamps, merging overlaps.
-- Shows prompts, response excerpts, models, Discord links, commits, and changed files.
-- Lists historical branches and commits made on each, using recorded commit output.
-- Includes daily activity, project totals, and an evidence-based weekly summary.
-- Embeds JetBrains Mono and offers five theme colors, with a lighter pink default.
-- Fits the viewport; stacks calendar/summary at 1032px and uses an agenda on phones.
-
-Hours represent **estimated agent-session activity**, not human working hours.
-Commit absence is not a failure classification. See [the evidence contract](docs/report-contract.md).
-
-## 1. Install the current baseline
-
-Requirements: Python 3.9+ with timezone data, Git, the Kimaki CLI, and access to the
-local OpenCode server retaining the sessions you want to report.
-
-Install this checkout at **`~/.calendar/`**. The current helpers read templates,
-font assets, and runtime files from that fixed directory. If you downloaded the
-source elsewhere, copy `helpers/`, `fonts/`, and the documentation/task files here.
-
-```text
-~/.calendar/
-├── README.md, AGENTS.md, docs/, tasks/   Instructions and operating contract
-├── helpers/                            Collector, renderer, tests, HTML template
-├── fonts/                              JetBrains Mono + SIL Open Font License
-├── evidence/                           Local activity cache; ignored by Git
-├── weeks/                              HTML, Markdown, previews; ignored by Git
-└── preferences.json                    Local project colors; ignored by Git
-```
-
-Create `evidence/` and `weeks/` if they do not exist. Register source projects with
-Kimaki and verify `kimaki project list --json` returns their local directories.
-The font license is included in every generated HTML file.
-
-## 2. Run on demand
-
-### With an agent in Discord
-
-Ask an agent with access to this machine:
-
-> Read `~/.calendar/tasks/weekly-work-calendar.md`. Generate, verify, and attach my
-> calendar for the previous complete week, reusing `~/.calendar/helpers/`.
-
-You can instead request a specific week, for example October 5–11, 2026, in
-America/Argentina/Buenos_Aires. An agent determines the week, writes the evidenced
-summary, verifies the output, and attaches it to the current thread.
-
-### With Kimaki
-
-Replace the path with an existing registered reporting project. Without
-`--send-at`, this starts immediately in a new thread:
+Requirements: **Node.js 22+**, Git, the Kimaki CLI, and access to local OpenCode
+servers retaining the sessions to report. Python 3.9+ is needed only for baseline
+parity tests, not for the installed CLI.
 
 ```sh
-kimaki send \
-  --project '/absolute/path/to/reporting-project' \
-  --prompt 'Read ~/.calendar/tasks/weekly-work-calendar.md and generate, verify, and attach the previous complete week’s work calendar.' \
-  --agent build
+npm ci
+npm run build
+node dist/cli.js report --previous-week
+node dist/cli.js report --week 2026-10-05 --project /absolute/path/to/repo
 ```
 
-### Directly with Python
+These source commands run from the checkout root. From another working directory,
+use the absolute executable path, for example
+`node /home/your-user/.calendar/dist/cli.js report --previous-week`.
 
-Find the current server port from Kimaki CLI discovery output, for example by
-running `kimaki session list --project /absolute/project/path --json`.
+Automatic discovery runs `kimaki project list --json` and per-project
+`kimaki session list --project PATH --json`, then verifies the discovered server's
+`/doc`. If discovery cannot locate a server, supply `--api http://127.0.0.1:PORT`.
+Unavailable APIs, retained-history limits, and unavailable Git remain coverage gaps.
+
+The week is Monday 00:00 inclusive to next Monday 00:00 exclusive in the reporting
+timezone. `--previous-week` selects the previous **complete** local week. Explicit
+`--week` dates must be Mondays. Choose exactly one week option.
+
+## 2. Commands and configuration
+
+- `report`: collect evidence and render HTML plus a three-line Markdown summary.
+- `collect`: save sanitized evidence for inspection and curated summaries.
+- `render`: regenerate from cached evidence without fetching sessions or Git.
+
+Shared flags:
+
+| Flag | Purpose |
+| --- | --- |
+| `--week YYYY-MM-DD` / `--previous-week` | Explicit Monday or previous complete week |
+| `--timezone ZONE` | IANA timezone; defaults to `America/Argentina/Buenos_Aires` |
+| `--project PATH` | Repeatable registered source-directory filter; omitted includes all local projects |
+| `--data-dir PATH` | Runtime storage; defaults to `~/.calendar` |
+| `--output-dir PATH` | HTML/Markdown destination; defaults to `DATA_DIR/weeks` |
+| `--api URL` | Override automatic OpenCode discovery |
+| `--exclude-session ID` | Repeatable reporting-session exclusion |
+| `--summary PATH` | Curated summary JSON; omitted uses cached summary or factual fallback |
+| `--theme NAME` | Pink, Lavender, Blue, Green, or Peach; saved browser choice takes precedence |
+
+Optional `DATA_DIR/config.json` settings:
+
+```json
+{
+  "timezone": "Europe/London",
+  "projects": ["/absolute/path/to/repo"],
+  "theme": "Pink"
+}
+```
+
+Also supported: `outputDir`, `api`, and `excludeSessions`. CLI settings override
+configuration, then defaults apply. Prefer absolute configured paths; relative
+paths resolve from the execution directory. Config files are validated and never
+silently ignored when malformed. `local-profile.json` remains agent-only delivery
+metadata; the CLI does not interpret it.
+
+**Delivery destination and evidence selection are independent:** Kimaki's
+`send --project` chooses a working project/channel; this CLI's `--project` filters
+source evidence. An agent must pass its current reporting session ID with
+`--exclude-session`, rather than relying on the retained title heuristic alone.
+
+## 3. Curated summaries and offline reports
 
 ```sh
-python ~/.calendar/helpers/collect.py \
-  --week 2026-10-05 \
-  --api http://127.0.0.1:PORT
-
-python ~/.calendar/helpers/generate.py --week 2026-10-05
+node dist/cli.js collect --week 2026-10-05
+# Inspect actual conversation outcomes and write an evidenced summary.
+node dist/cli.js render --week 2026-10-05 --summary /path/to/summary.json
 ```
 
-Replace `PORT` with the actual OpenCode server port. `--week` is the reporting
-Monday, not the execution date. Output: `~/.calendar/weeks/2026-10-05.html` and the
-adjacent three-line `.md` summary.
-
-Direct Python execution generates files but does not upload them. Without a
-curated `evidence/YYYY-MM-DD-summary.json`, the renderer uses a neutral factual
-summary. See [operations](docs/operations.md) for summary fields and delivery.
-
-## 3. Choose projects
-
-**Delivery project and evidence scope are separate.**
-
-- `kimaki send --project ...` chooses the agent's working project and Discord channel.
-- The current collector includes **all locally registered Kimaki projects**.
-- Their directories identify OpenCode sessions and Git repositories/worktrees.
-- A Git repository alone cannot establish timestamped coding-agent activity.
-
-The Python collector currently has no single-project filter. An explicit
-`--project`/project allowlist is planned for the TypeScript CLI; do not confuse
-Kimaki's delivery option with a collector filter that does not exist.
-
-## 4. Run weekly
-
-Kimaki supplies scheduling and Discord delivery; an agent orchestrates the same
-collector and renderer used on demand:
-
-```text
-Scheduled Kimaki prompt → collect evidence → write evidenced summary
-                       → render existing template → verify → attach HTML
-```
-
-For a new user's machine, personalize the reporting project and schedule:
+For an agent-assisted run from this checkout:
 
 ```sh
-kimaki send \
-  --project '/absolute/path/to/reporting-project' \
-  --prompt 'Read ~/.calendar/tasks/weekly-work-calendar.md and generate, verify, and attach the previous complete week’s work calendar.' \
-  --send-at '0 12 * * 1' \
-  --agent build
+node dist/cli.js collect --previous-week --exclude-session CURRENT_RUN_SESSION_ID
+# Inspect evidence/YYYY-MM-DD.json and write evidence/YYYY-MM-DD-summary.json.
+node dist/cli.js render --previous-week --exclude-session CURRENT_RUN_SESSION_ID
+kimaki upload-to-discord --session CURRENT_RUN_SESSION_ID /absolute/path/to/weeks/YYYY-MM-DD.html
 ```
 
-This example runs **Monday at 12:00 UTC**, equivalent to **09:00 Buenos Aires**.
-Kimaki cron expressions are UTC. Other reporting timezones require code changes
-in this baseline, and their scheduling offsets may change with daylight saving.
+Use the current run's actual session ID in both exclusions and delivery. Collection
+and rendering generate local files; the upload command attaches them to Discord.
 
-The host, Kimaki, model access, and the local OpenCode server must be available
-when the task runs. Inspect/manage existing tasks with `kimaki task list`,
-`kimaki task edit`, and `kimaki task delete`; edit an existing schedule instead of
-creating duplicates.
+Summary input contains exactly three single-line `lines` and `followups` with
+actual report session IDs. See [operations](docs/operations.md) for the schema
+and delivery workflow. Without curated input, generation uses a factual fallback
+and infers no follow-ups from commit absence.
 
-**Existing deployment:** task #1 currently runs through the TsCanvas project and
-reads `tasks/weekly-work-calendar.md` there. It already uses Monday `0 12 * * 1`.
-The standalone project/channel registration does not move or replace that task.
+Hours mean **estimated agent-session activity**, not human working time. Project
+totals may exceed the overall union when projects overlap. Read the
+[report contract](docs/report-contract.md) for provenance, timing, commits,
+historical branches, and coverage semantics.
 
-## 5. Why Python, and why migrate?
+Source assets remain in `helpers/template.html` and `fonts/`; the installed CLI
+resolves them relative to its package, independently of cwd and runtime storage.
+Personal `evidence/`, `weeks/`, `preferences.json`, `config.json`, and
+`local-profile.json` are ignored and excluded from the tarball.
 
-Python was chosen for a lightweight, standard-library-only local prototype:
-HTTP, JSON, timezone conversion, and Git subprocesses needed no pip dependencies.
-The original task explicitly favored this approach.
+## 4. Local npm installation and npx execution
 
-For distribution to Kimaki/OpenCode users, Node.js/TypeScript is the intended
-direction: npm installation, `npx` execution, typed configuration, and a familiar
-runtime. The existing HTML/CSS design and evidence semantics should carry over.
+```sh
+npm pack --pack-destination weeks
+# Substitute the absolute path printed by npm pack.
+npm install --prefix /path/to/local-install /absolute/path/to/work-calendar-local-0.0.0.tgz
+npm exec --prefix /path/to/local-install -- work-calendar-local report --previous-week
+```
 
-See [the migration plan](docs/typescript-migration.md). The proposed npm commands
-there are design targets, not commands available in this version.
+`npm exec` is npm's `npx` execution interface. From the local installation,
+`npx --no-install work-calendar-local report --previous-week` also runs the CLI.
+There is no registry installation command yet. The package is private and its
+publication script is disabled pending naming/license decisions.
+
+## 5. Scheduling and Discord delivery
+
+Use the same `report` command from an OS scheduler, or have a Kimaki reporting
+agent run `collect`, supply an evidenced summary, then `render` and upload.
+Scheduling remains external to the CLI. Kimaki cron expressions are UTC;
+reporting-week boundaries use the configured local timezone and account for DST.
+
+**Existing task #1 stays in TsCanvas**, on its existing Monday `0 12 * * 1`
+schedule and task file. This migration does not retarget or modify it. The Python
+reference helpers and default runtime layout remain available for that workflow.
+
+Read [operations](docs/operations.md) before generating or attaching a report.
+
+## Shell completions
+
+For a local installed binary, enable completion with
+`work-calendar-local completions install`, then restart your shell. Remove it
+with `work-calendar-local completions uninstall`. From source, use
+`node dist/cli.js completions script --shell bash` to inspect the script first.
 
 ## Verify and develop
 
 ```sh
-python ~/.calendar/helpers/test_timing.py
-python ~/.calendar/helpers/test_branches.py
+npm run check
+python helpers/test_timing.py
+python helpers/test_branches.py
+npm run verify:package
 ```
 
-For UI changes, render a report and check offline `file://` opening, details,
-keyboard access, mobile layout, 1032px stacking, and maximum-width grid alignment.
-See [helper reference](helpers/README.md) for renderer and design details.
+TypeScript tests cover the eight baseline cases, synthetic whole-report parity,
+DST/week boundaries, safe embedding, source adapters, and CLI configuration and
+filtering. Packaging verification installs a local tarball and executes it away
+from the source root, with all temporary artifacts under ignored `weeks/`.
 
-Source code, documentation, and font assets are versioned. Personal evidence,
-generated reports, preferences, and local profile settings are ignored. No remote
-repository, publication, or project-wide license has been selected yet; the
-bundled font retains its existing SIL Open Font License.
+For UI changes, verify offline opening, themes, keyboard details/Escape/focus,
+phone agenda, 1032px stacking, and wide alignment. See
+[helper/design reference](helpers/README.md) and
+[migration status](docs/typescript-migration.md).

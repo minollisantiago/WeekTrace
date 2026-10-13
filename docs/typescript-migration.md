@@ -1,70 +1,76 @@
-# Node.js / TypeScript migration direction
+# Node.js / TypeScript migration
 
-## Decision
-
-Python served the first local implementation well: standard-library HTTP, JSON,
-Git subprocesses, and timezone calculations required no pip dependencies. The
-source task explicitly favored lightweight Python or equivalent tooling.
-
-The intended distribution runtime is Node.js/TypeScript, matching Kimaki/OpenCode
-users and enabling npm installation and `npx` execution. Preserve the current
-HTML/CSS design, semantic evidence contract, and the Python tests as reference
-cases. This document is a plan; the baseline has not been migrated.
-
-## Target architecture
+## Implemented architecture
 
 ```text
-OpenCode/Kimaki adapter + Git adapter
-                 ↓
-Normalized, provenance-bearing evidence
-                 ↓
-Week resolution + intervals + attribution + branch totals
-                 ↓
-Existing portable HTML renderer + factual summary input
-                 ↓
-Local files; optional Kimaki orchestration handles delivery
+goke CLI + validated local configuration
+                    ↓
+Kimaki discovery → documented OpenCode GET APIs + Git adapter
+                    ↓
+Typed, sanitized evidence with provenance and visible coverage gaps
+                    ↓
+Temporal week boundaries → intervals, union totals and branch attribution
+                    ↓
+Approved HTML template + embedded font/license + evidenced/fallback summary
+                    ↓
+Ignored local evidence and output files
 ```
 
-Scheduled and on-demand execution should call the same CLI. Collection and
-rendering should work without asking an agent to reinvent the template. An agent
-can still interpret outcomes and supply an evidenced narrative; deterministic
-generation must have a factual fallback without an LLM.
+The private package targets Node.js 22+, builds ESM and declarations with `tsc`,
+uses goke/Zod for typed CLI inputs, errore for domain-error values, and the Temporal
+polyfill for timezone-safe date arithmetic. Relative source imports use `.ts`;
+the compiler rewrites them to `.js` in `dist/`.
 
-## Proposed interface — not implemented
+## Source and assets
 
-The package name is tentative and has not been checked or published:
+- `src/commands.ts`, `cli.ts`, `config.ts`, `run.ts`: shared report/collect/render CLI.
+- `src/adapters/`: Kimaki discovery, validated OpenCode GET responses, Git subprocesses.
+- `src/schema.ts`, `evidence.ts`, `time.ts`, `report.ts`: evidence and deterministic calculations.
+- `src/render.ts`: package-relative asset loading and safe one-pass embedding.
+- `helpers/template.html`, `fonts/`: shared approved design and offline assets.
+- `helpers/*.py`: untouched Python reference engine and eight regression tests.
+- `scripts/verify-package.mjs`: local tarball inspection and installed CLI execution.
 
-```sh
-npx work-calendar report --previous-week
-npx work-calendar report --week 2026-10-05 --project /absolute/path/to/repo
-```
+Keeping one shared template avoids divergent Python/TypeScript designs and retains
+the separately approved hover-card improvements committed during migration planning.
+Only date-label and configurable theme-default plumbing changed in the template.
+Python reports retain their existing date fallback and pink theme default.
 
-## Migration sequence
+## CLI and runtime
 
-1. Package source/assets separately from personal runtime data; choose package
-   name and project license before public publication.
-2. Define validated configuration for reporting timezone, project allowlists,
-   output directory, theme defaults, and adapter/server discovery.
-3. Port interval, midnight/week clipping, deduplication, branch attribution, and
-   safe serialization. Verify against the existing tests plus cross-timezone
-   daylight-saving boundary cases.
-4. Port discovery and collection. Cover sessions older than the reporting week,
-   documented API pagination/limits, worktrees, unavailable sources, and explicit
-   reporting-session exclusion instead of relying only on title heuristics.
-5. Port rendering while retaining the current approved UI and offline assets.
-6. Implement explicit-week and previous-complete-week CLI execution; add
-   single/multiple-project selection and configurable timezone.
-7. Document npm/`npx` installation and Kimaki scheduled delivery. Expose local
-   file generation separately so OS cron/task schedulers can invoke it too.
-8. Verify a clean external installation and one scheduled/on-demand report before
-   calling the distribution workflow ready.
+`report` collects and renders; `collect` and `render` expose the same stages for
+agent-curated summaries. Both explicit Monday and previous-complete-week modes
+support timezone, repeatable project filters, automatic per-project server
+discovery, output/runtime paths, explicit reporting-session exclusions, and
+curated summary input. CLI overrides local config, then defaults apply.
 
-## Acceptance criteria
+Default runtime storage remains `~/.calendar`, but package assets have no dependency
+on installation there. Configured runtime paths must be writable and personal.
+The npm `files` allowlist excludes all evidence, reports, colors, config, and
+delivery profiles. No Discord IDs or OpenCode port are embedded in package defaults.
 
-- No dependency on a clone living at the fixed `~/.calendar/` source path.
-- No machine-specific OpenCode port or Discord IDs in the distributable defaults.
-- The same input produces the same intervals, counts, and attribution as baseline.
-- A new user can select projects, choose a timezone, and generate with one CLI.
-- The HTML opens offline and preserves accessibility, responsive layout, and theme controls.
-- Every uncertain/unavailable source remains visible as a coverage gap.
-- Existing scheduled task #1 changes only when explicitly requested.
+## Verification gates
+
+- Re-run the 8 Python tests and reproduce their cases in TypeScript.
+- Compare normalized whole-report data against Python using synthetic evidence.
+- Test DST weeks, local Monday boundaries, old-session actual activity, branch
+  conflicts/prefix ambiguity, safe serialization, curated follow-ups, configuration,
+  project filtering, documented API limits, and commit-tree file evidence.
+- Verify browser controls offline at desktop, 1032px stacking, and phone sizes.
+- Install a local npm tarball, inspect its file list, and execute the installed CLI
+  outside the source root using npm's npx execution interface.
+- Exercise real automatic discovery and a scheduler-style previous-week invocation.
+
+Run `npm run check` and `npm run verify:package` from a source checkout. Python is
+required for parity development tests only; shipped report generation uses Node.
+
+## Publication remains deferred
+
+`work-calendar-local` and version `0.0.0` are local placeholders, not a chosen
+public identity. The package is private; public package name, code license, remote
+repository, repository/homepage/bug metadata, and publishing workflow remain
+undecided. No public registry command is documented as available.
+
+Scheduling and delivery remain Kimaki/OS orchestration. Existing task #1 in TsCanvas
+is preserved and continues to use its existing Python workflow until the user
+explicitly approves a schedule/task change.

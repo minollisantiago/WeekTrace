@@ -42,17 +42,16 @@ const themeColors=[['Pink','#F77C9D'],['Lavender','#B1A7F2'],['Blue','#88C1F2'],
 const picker=document.getElementById('theme-picker'),themeButtons=[];
 function applyTheme(color,persist=true){if(!themeColors.some(([,value])=>value===color))return;document.documentElement.style.setProperty('--accent',color);themeButtons.forEach((button,i)=>{const active=themeColors[i][1]===color;button.setAttribute('aria-pressed',String(active));button.textContent=active?'✓':''});if(persist){try{localStorage.setItem('work-calendar-theme',color)}catch{}}}
 themeColors.forEach(([name,color],i)=>{const button=el('button','','theme-swatch');button.type='button';button.style.background=color;button.setAttribute('aria-label',`${name} theme ${color}`);button.title=`${name} · ${color}`;button.onclick=()=>applyTheme(color);button.onkeydown=event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?4:(i+(event.key==='ArrowRight'?1:4))%5;themeButtons[next].focus();applyTheme(themeColors[next][1])};themeButtons.push(button);picker.append(button)});
-let initialTheme=themeColors[0][1];try{const saved=localStorage.getItem('work-calendar-theme');if(themeColors.some(([,color])=>color===saved))initialTheme=saved}catch{}applyTheme(initialTheme,false);
+let initialTheme=themeColors.find(([name])=>name===D.theme)?.[1]||themeColors[0][1];try{const saved=localStorage.getItem('work-calendar-theme');if(themeColors.some(([,color])=>color===saved))initialTheme=saved}catch{}applyTheme(initialTheme,false);
 const fmt=new Intl.DateTimeFormat('en-GB',{timeZone:D.timezone,hour:'2-digit',minute:'2-digit'});
 const stamp=new Intl.DateTimeFormat('en-GB',{timeZone:D.timezone,weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
 const hm=h=>{const m=Math.round(h*60);return `${Math.floor(m/60)}h ${String(m%60).padStart(2,'0')}m`};
 const dayNames=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-const dates=dayNames.map((name,i)=>{let date=new Date(D.week+'T12:00:00-03:00');date.setUTCDate(date.getUTCDate()+i);return {name,date,num:date.getUTCDate()}});
+const dates=dayNames.map((name,i)=>{let date=new Date(D.dates?.[i]??D.week+'T12:00:00-03:00');if(!D.dates)date.setUTCDate(date.getUTCDate()+i);return {name,date,num:Number(new Intl.DateTimeFormat('en-US',{timeZone:D.timezone,day:'numeric'}).format(date))}});
 const noLinked=D.sessions.filter(s=>!s.commits.length), completedNoLinked=noLinked.filter(s=>!s.status.startsWith('Active')&&!s.status.startsWith('No final')&&!s.status.startsWith('Git'));
-document.getElementById('heading').textContent=`October ${dates[0].num}–${dates[6].num}, ${dates[0].date.getUTCFullYear()}`;
 // Month labels stay correct for subsequent reports, including cross-month weeks.
 const dateLabel=new Intl.DateTimeFormat('en-US',{timeZone:D.timezone,month:'short',day:'numeric'});
-document.getElementById('heading').textContent=`${dateLabel.format(dates[0].date)} – ${dateLabel.format(dates[6].date)}, ${dates[6].date.getUTCFullYear()}`;
+document.getElementById('heading').textContent=`${dateLabel.format(dates[0].date)} – ${dateLabel.format(dates[6].date)}, ${new Intl.DateTimeFormat('en-US',{timeZone:D.timezone,year:'numeric'}).format(dates[6].date)}`;
 const stats=document.getElementById('topstats'); for(const [v,label] of [[D.sessions.length,'sessions'],[D.commits,'linked commits'],[noLinked.length,'without linked commits']]){const x=el('span');x.append(el('strong',String(v)),document.createTextNode(' '+label));stats.append(x)}
 const heads=document.getElementById('dayheads');heads.append(el('div')); dates.forEach(({name,num},i)=>{const h=el('div',name,'dayhead');h.append(el('b',String(num)));heads.append(h);const o=el('option',`${name} ${num}`);o.value=String(i);document.getElementById('dayselect').append(o)});
 const grid=document.getElementById('grid'),axis=el('div',undefined,'axis');for(let h=0;h<24;h++){const tick=el('span',`${String(h).padStart(2,'0')}:00`,'tick');tick.style.top=`${h*44+7}px`;axis.append(tick)}grid.append(axis);

@@ -13,3 +13,11 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .DS_Store
+
+# Node build/tooling and local packaging checks.
+node_modules/
+dist/
+*.tsbuildinfo
+*.tgz
+/config.json
+/weeks-*/

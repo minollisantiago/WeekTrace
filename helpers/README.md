@@ -1,5 +1,17 @@
 # Weekly work calendar helpers
 
+The Node.js/TypeScript CLI is now the portable generation engine. See the root
+README for `report`, `collect`, `render`, configuration, and local tarball setup.
+These Python commands remain the reference workflow and support the unchanged
+existing scheduled task. This directory's template is shared by both engines;
+the npm package includes the template and this design reference, not Python code.
+
+TypeScript assets resolve relative to the installed package. Runtime storage
+defaults to `~/.calendar` and can be relocated with `--data-dir`. The CLI uses
+timezone-aware local midnights for DST weeks and accepts explicit session exclusions.
+Run `npm run check` for engine parity and `npm run verify:package` for local
+installation checks. Python commands below require the source checkout.
+
 Run from any directory using standard-library Python:
 
 ```sh
