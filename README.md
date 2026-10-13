@@ -19,8 +19,7 @@ The bundled font retains its SIL Open Font License.
 ## 1. Install and run locally
 
 Requirements: **Node.js 22+**, Git, the Kimaki CLI, and access to local OpenCode
-servers retaining the sessions to report. No Python interpreter is required for
-generation, testing, or package verification.
+servers retaining the sessions to report.
 
 ```sh
 git clone https://github.com/minollisantiago/WeekTrace.git
@@ -167,18 +166,7 @@ DST/week boundaries, safe embedding, source adapters, and CLI configuration and
 filtering. Packaging verification installs a local tarball and executes it away
 from the source root, with all temporary artifacts under ignored `weeks/`.
 
-The old Python collector, renderer, and test scripts have been retired. Their
-synthetic report output is retained in `src/baseline-report.fixture.ts`, while
-the original implementation remains in Git history. Regression checks need only Node.
-
 For UI changes, verify offline opening, themes, keyboard details/Escape/focus,
 phone agenda, 1032px stacking, and wide alignment. See
 [helper/design reference](helpers/README.md) and
 [migration status](docs/typescript-migration.md).
-
-## Brand
-
-WeekTrace uses the approved continuous handwritten **W** trace, a lowercase
-`weektrace` wordmark, rose `#F23568`, and the tagline above. The report embeds its
-mark and favicon for offline viewing. See [branding](docs/branding.md) for assets
-and usage. Existing `~/.calendar` runtime paths retain their names for continuity.

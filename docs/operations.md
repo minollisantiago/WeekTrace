@@ -127,5 +127,5 @@ node ~/.calendar/dist/cli.js render --previous-week --exclude-session CURRENT_RU
 ```
 
 Use the installed local `weektrace` executable instead when available. Both
-invocations resolve packaged assets independently of cwd. The retired interpreter
-pipeline is no longer part of generation or verification.
+invocations resolve packaged assets independently of cwd and use the same reporting
+engine.

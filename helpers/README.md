@@ -12,8 +12,8 @@ TypeScript assets resolve relative to the installed package. Runtime storage
 defaults to `~/.calendar` and can be relocated with `--data-dir`. The CLI uses
 timezone-aware local midnights for DST weeks and accepts explicit session exclusions.
 Run `npm run check` for baseline regressions and `npm run verify:package` for local
-installation checks. The frozen synthetic report fixture preserves the retired
-engine's behavior without requiring another interpreter.
+installation checks. Frozen synthetic report fixtures preserve expected behavior
+across engine changes.
 
 Run from any directory using the built CLI:
 

@@ -29,7 +29,7 @@ the compiler rewrites them to `.js` in `dist/`.
 - `src/render.ts`: package-relative asset loading and safe one-pass embedding.
 - `assets/weektrace.svg`: approved WeekTrace handwritten W mark.
 - `helpers/template.html`, `fonts/`: shared approved design and offline assets.
-- `src/baseline-report.fixture.ts`: frozen synthetic output from the retired reference engine.
+- `src/baseline-report.fixture.ts`: frozen synthetic report output for regression checks.
 - `scripts/verify-package.mjs`: local tarball inspection and installed CLI execution.
 
 Keeping the approved template retains
@@ -64,20 +64,15 @@ delivery profiles. No Discord IDs or OpenCode port are embedded in package defau
 
 Run `npm run check` and `npm run verify:package` from a source checkout. Development
 checks and local package verification require Node.js and Git; real collection also
-uses the Kimaki CLI and local OpenCode servers. No Python interpreter is required.
+uses the Kimaki CLI and local OpenCode servers.
 
-## Reference pipeline retirement
+## Regression fixtures
 
-The Python collector, renderer, and test helpers were removed after the TypeScript
-engine passed whole-report parity and generated a real all-project report. Before
-removal, all eight reference tests passed and the old renderer's output was captured
-using the synthetic input in `src/fixtures.ts`. The resulting independent fixture
-is `src/baseline-report.fixture.ts`; it is not regenerated from the implementation
-under test. Coverage wording and newer branding/date fields are outside this parity
-comparison, matching the previous live-reference test's scope.
-
-The original reference implementation remains accessible in Git history at
-`20cc40a`. It is not part of any current build, test, collection, or rendering path.
+`src/fixtures.ts` supplies synthetic evidence, and `src/baseline-report.fixture.ts`
+stores independent expected report output. Keep the expected fixture independent
+of the implementation under test. Whole-report comparison covers sessions, blocks,
+totals, attribution, and summaries; coverage prose and branding/date additions are
+checked separately where applicable.
 
 ## Publication remains deferred
 
