@@ -5,6 +5,9 @@ Node.js/TypeScript, with frozen synthetic fixtures preserving baseline parity.
 
 - **Generate or deliver a report:** read `tasks/weekly-work-calendar.md` and
   `docs/operations.md`; apply `docs/report-contract.md` to all evidence and totals.
+  Honor explicit `--from`/`--to` ranges or `--last-days N`, always capped at 1–7
+  inclusive local calendar days. Without a requested range/week, use the previous
+  complete Monday–Sunday. Pin rolling dates between collection and rendering.
 - **Edit the renderer:** read `helpers/README.md`; preserve offline output and
   verify the affected desktop/mobile controls in a browser.
 - **Change attribution or time calculations:** read `docs/report-contract.md`;

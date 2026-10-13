@@ -3,6 +3,9 @@
 ## Current capabilities
 
 - Node.js/TypeScript `report`, `collect`, and `render` share one engine.
+- Every command accepts weekly, inclusive custom `--from`/`--to`, or rolling
+  `--last-days N` selections, with a hard cap of 1–7 local calendar days.
+  Today includes only activity collected so far; grid and agenda match the range.
 - Collection discovers locally registered Kimaki projects and per-project OpenCode
   servers through CLI output, verifies `/doc`, and uses documented GET APIs.
 - Default source scope is all local registrations; repeatable `--project` selects
@@ -14,8 +17,11 @@
 
 ## Execute an agent-assisted report
 
-1. Read the task and [report contract](report-contract.md). Resolve the explicit
-   reporting Monday, or use `--previous-week` for the previous complete local week.
+1. Read the task and [report contract](report-contract.md). Resolve the requested
+   range or reporting Monday, or use `--previous-week` for the previous complete local week.
+   Choose exactly one date-selection mode. Custom dates must use YYYY-MM-DD, both
+   `--from` and `--to`, and span 1–7 inclusive days. `--last-days` accepts integers
+   from 1 to 7. Reversed, oversized, incomplete, and conflicting selections fail.
    Respect the user's timezone and project filters.
 2. Use the installed local `weektrace` binary, or `node dist/cli.js` from
    a built source checkout. Confirm `--help`. Runtime defaults to `~/.calendar`;
@@ -33,14 +39,21 @@
    ```
 
    For an explicit week, replace `--previous-week` with `--week YYYY-MM-DD`.
+   For on-demand ranges, use `--from YYYY-MM-DD --to YYYY-MM-DD` (inclusive,
+   maximum seven days), or `--last-days N` (1–7 days including today).
+   Range artifacts and curated summaries use `YYYY-MM-DD_to_YYYY-MM-DD` instead
+   of the weekly date key. Inspect the reported evidence path. If collection and
+   rendering cross local midnight, use the returned inclusive `from`/`to` dates
+   as explicit flags for rendering. The reporting timezone determines today's date.
    Apply the same timezone, project, data-directory, and exclusion options to
    subsequent commands. No fixed OpenCode port is assumed; pass `--api` only
    when discovery is unavailable or an explicit server is requested.
 4. Inspect sanitized evidence and actual final response excerpts. Check source gaps,
    represented subagents, commit links, and timing coverage. Missing Git evidence,
    missing finals, current idle status, and commit absence are distinct facts.
-5. Write `DATA_DIR/evidence/YYYY-MM-DD-summary.json`, or supply another file with
-   `--summary`. The shape is:
+5. Write `DATA_DIR/evidence/REPORT_KEY-summary.json`, or supply another file with
+   `--summary`. `REPORT_KEY` is the Monday for weekly reports, or
+   `YYYY-MM-DD_to_YYYY-MM-DD` for custom/rolling reports. The shape is:
 
    ```json
    {
@@ -59,7 +72,7 @@
    are evidenced. Follow-up IDs must be present in the selected report. Do not infer
    unfinished work from missing commits. Omitted curated input produces a neutral
    factual fallback without an LLM.
-6. Render using the same week/configuration:
+6. Render using the same resolved dates/configuration:
 
    ```sh
    weektrace render --previous-week --exclude-session CURRENT_RUN_SESSION_ID
@@ -73,9 +86,10 @@
 
    `report` combines collection/rendering for deterministic on-demand or OS-scheduled
    runs. It reads an existing summary or uses the fallback. `render` requires cached
-   evidence boundaries to match the requested timezone/week; recollect when they differ.
+   evidence boundaries to match the requested timezone/range; recollect when they differ.
 7. Confirm the HTML and adjacent three-line Markdown exist under the selected output
-   directory. Inspect estimates and gaps before calling the week empty. A partial
+   directory as `REPORT_KEY.html` and `REPORT_KEY.md`. Inspect estimates and gaps
+   before calling the selected range empty. A partial
    report records unavailable sources and emits a coverage warning on stderr;
    validation or fatal setup failures exit nonzero. Successful partial output is retained.
 8. Verify offline opening and zero network requests. For engine changes, run
@@ -98,7 +112,7 @@
 ## Scheduling and existing deployment
 
 Kimaki recurring prompts or OS cron/task schedulers invoke the same CLI. Kimaki cron
-is UTC; report-week boundaries are local and DST-aware. Choose the scheduler time
+is UTC; report-date boundaries are local and DST-aware. Choose the scheduler time
 separately from the reporting timezone, with no assumption that missed runs replay.
 
 Existing task #1 remains in TsCanvas, reads its task file there, and runs Monday
@@ -129,3 +143,12 @@ node ~/.calendar/dist/cli.js render --previous-week --exclude-session CURRENT_RU
 Use the installed local `weektrace` executable instead when available. Both
 invocations resolve packaged assets independently of cwd and use the same reporting
 engine.
+
+For an on-demand rolling report from any delivery project:
+
+```sh
+node ~/.calendar/dist/cli.js report --last-days 7 --exclude-session CURRENT_RUN_SESSION_ID
+```
+
+For a curated range, substitute `--from YYYY-MM-DD --to YYYY-MM-DD` into both
+`collect` and `render` above. Upload the exact output path returned by the CLI.

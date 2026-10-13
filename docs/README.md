@@ -3,7 +3,12 @@
 Start with the [project README](../README.md) for installation, on-demand runs,
 project scope, scheduling, external-user setup, and the TypeScript-only workflow.
 
-- [Operations](operations.md): the agent's generation, verification, and delivery recipe.
+Reports support Monday–Sunday weeks, inclusive custom ranges with
+`--from YYYY-MM-DD --to YYYY-MM-DD`, and rolling `--last-days N` ranges including
+today. Every report covers **1–7 local calendar days**; today includes only
+activity collected so far. The grid and phone agenda adapt to the selected dates.
+
+- [Operations](operations.md): date selection, range artifact names, and the agent's generation, verification, and delivery recipe.
 - [Report contract](report-contract.md): evidence, time, commits, branches, and output semantics.
 - [TypeScript migration](typescript-migration.md): implemented architecture, CLI, verification, and deferred publication decisions.
 - [Branding](branding.md): WeekTrace name, approved W mark, palette, and offline use.

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { hours, intervals, merge, midnight, resolveWeek, splitDays, DEFAULT_TIMEZONE } from './time.ts'
+import { hours, intervals, merge, midnight, resolveWeek, resolveRange, dayBoundaries, splitDays, DEFAULT_TIMEZONE } from './time.ts'
 import { safeJson } from './render.ts'
 
 describe('Timing baseline cases', () => {
@@ -47,5 +47,37 @@ describe('timezone-aware weeks', () => {
       expect(resolveWeek({ timezone: DEFAULT_TIMEZONE, ...options })).toBeInstanceOf(Error)
     }
     expect(resolveWeek({ week: '2026-10-05', timezone: 'Invalid/Zone' })).toBeInstanceOf(Error)
+  })
+})
+
+describe('bounded custom and rolling ranges', () => {
+  test.each([['2026-10-07', '2026-10-13', 7], ['2026-10-13', '2026-10-13', 1],
+    ['2026-12-29', '2027-01-04', 7]])('inclusive range %s to %s contains %i days', (from, to, days) => {
+    const result = resolveRange({ from, to, timezone: DEFAULT_TIMEZONE })
+    if (result instanceof Error) throw result
+    expect(result.start).toBe(midnight(from, DEFAULT_TIMEZONE))
+    expect(dayBoundaries(result)).toHaveLength(days + 1)
+    expect(result.end - result.start).toBe(days * 86_400_000)
+  })
+  test.each([['2026-03-08', 23], ['2026-11-01', 25]])('one local DST day %s has %i hours', (date, elapsed) => {
+    const result = resolveRange({ from: date, to: date, timezone: 'America/New_York' })
+    if (result instanceof Error) throw result
+    expect((result.end - result.start) / 3_600_000).toBe(elapsed)
+    expect(dayBoundaries(result)).toHaveLength(2)
+  })
+  test('rolling dates include today in the requested timezone', () => {
+    const now = Date.parse('2026-10-13T01:00:00Z')
+    expect(resolveRange({ lastDays: 7, timezone: DEFAULT_TIMEZONE, now })).toMatchObject({ week: '2026-10-06',
+      end: midnight('2026-10-13', DEFAULT_TIMEZONE) })
+    expect(resolveRange({ lastDays: 1, timezone: 'Pacific/Kiritimati', now })).toMatchObject({ week: '2026-10-13' })
+  })
+  test('rejects oversized, reversed, malformed, incomplete and conflicting selections', () => {
+    for (const options of [{ from: '2026-10-07', to: '2026-10-14' }, { from: '2026-10-13', to: '2026-10-07' },
+      { from: '2026-02-30', to: '2026-03-01' }, { from: '2026-10-07' }, { to: '2026-10-13' },
+      { from: '2026-10-07T00:00', to: '2026-10-13' }, { lastDays: 0 }, { lastDays: 8 }, { lastDays: 1.5 },
+      { lastDays: NaN }, { lastDays: 7, previousWeek: true }, { lastDays: 7, week: '2026-10-05' },
+      { lastDays: 7, from: '2026-10-07', to: '2026-10-13' }, {}]) {
+      expect(resolveRange({ timezone: DEFAULT_TIMEZONE, ...options })).toBeInstanceOf(Error)
+    }
   })
 })

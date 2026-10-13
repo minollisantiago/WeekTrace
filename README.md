@@ -4,7 +4,7 @@
 
 **Your agent work, week by week.**
 
-Generate a self-contained weekly HTML calendar from locally retained OpenCode
+Generate a self-contained HTML calendar for **1–7 days** from locally retained OpenCode
 sessions, registered Kimaki projects, and Git evidence. Reports open offline,
 with an embedded font, theme picker, keyboard-accessible details, and phone agenda.
 
@@ -28,6 +28,8 @@ npm ci
 npm run build
 node dist/cli.js report --previous-week
 node dist/cli.js report --week 2026-10-05 --project /absolute/path/to/repo
+node dist/cli.js report --last-days 7
+node dist/cli.js report --from 2026-10-07 --to 2026-10-13
 ```
 
 These source commands run from the checkout root. From another working directory,
@@ -41,7 +43,19 @@ Unavailable APIs, retained-history limits, and unavailable Git remain coverage g
 
 The week is Monday 00:00 inclusive to next Monday 00:00 exclusive in the reporting
 timezone. `--previous-week` selects the previous **complete** local week. Explicit
-`--week` dates must be Mondays. Choose exactly one week option.
+`--week` dates must be Mondays. Choose exactly one date-selection mode.
+
+Custom `--from` and `--to` dates are both inclusive and must span **1–7 calendar
+days**. `--last-days N` selects 1–7 local calendar days including today. Today
+contains only activity collected so far. All modes use timezone-aware midnight
+boundaries, including DST, and reject conflicting date flags.
+
+Custom and rolling artifacts use `YYYY-MM-DD_to_YYYY-MM-DD` names for evidence,
+HTML, Markdown, and the optional `-summary.json`, keeping them separate from weekly
+artifacts. Use the same flags for `collect` and `render`; across local midnight,
+use the resolved explicit `--from`/`--to` dates to render the same cached range.
+CLI results expose those inclusive `from`/`to` dates. The grid, agenda, weekday
+labels, daily totals, and day filter all adapt to the selected range.
 
 ## 2. Commands and configuration
 
@@ -54,6 +68,8 @@ Shared flags:
 | Flag | Purpose |
 | --- | --- |
 | `--week YYYY-MM-DD` / `--previous-week` | Explicit Monday or previous complete week |
+| `--from YYYY-MM-DD --to YYYY-MM-DD` | Inclusive custom range of 1–7 calendar days |
+| `--last-days N` | Last 1–7 calendar days including today |
 | `--timezone ZONE` | IANA timezone; defaults to `America/Argentina/Buenos_Aires` |
 | `--project PATH` | Repeatable registered source-directory filter; omitted includes all local projects |
 | `--data-dir PATH` | Runtime storage; defaults to `~/.calendar` |
@@ -91,6 +107,19 @@ node dist/cli.js collect --week 2026-10-05
 # Inspect actual conversation outcomes and write an evidenced summary.
 node dist/cli.js render --week 2026-10-05 --summary /path/to/summary.json
 ```
+
+For a rolling collection with a curated summary, pin the dates returned by
+`collect` before rendering. For example, a run resolving to October 7–13:
+
+```sh
+node dist/cli.js collect --last-days 7 --exclude-session CURRENT_RUN_SESSION_ID
+# Inspect evidence/2026-10-07_to_2026-10-13.json and write its -summary.json.
+node dist/cli.js render --from 2026-10-07 --to 2026-10-13 --exclude-session CURRENT_RUN_SESSION_ID
+```
+
+Use the actual returned dates rather than the example dates. Default curated
+summary names are `REPORT_KEY-summary.json`; without curated input, the factual
+fallback is used.
 
 For an agent-assisted run from this checkout:
 
@@ -162,8 +191,9 @@ npm run verify:package
 ```
 
 TypeScript tests cover the eight baseline cases, frozen synthetic whole-report parity,
-DST/week boundaries, safe embedding, source adapters, and CLI configuration and
-filtering. Packaging verification installs a local tarball and executes it away
+DST/week boundaries, inclusive ranges, rolling timezone boundaries, date validation,
+range-specific cache/output names, clipped totals, safe embedding, source adapters,
+and CLI configuration and filtering. Packaging verification installs a local tarball and executes it away
 from the source root, with all temporary artifacts under ignored `weeks/`.
 
 For UI changes, verify offline opening, themes, keyboard details/Escape/focus,

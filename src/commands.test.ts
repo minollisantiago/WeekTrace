@@ -11,6 +11,35 @@ test('CLI keeps repeatable source and reporting-session selections', async () =>
     '--project', '/one', '--project', '/two', '--exclude-session', 'ses_one', '--exclude-session', 'ses_two'], { run: false })
   expect(parsed.options).toMatchObject({ week: '2026-10-05', project: ['/one', '/two'], excludeSession: ['ses_one', 'ses_two'] })
 })
+test('CLI parses custom and rolling selections for every stage', async () => {
+  for (const mode of ['report', 'collect', 'render']) {
+    const rolling = await cli.clone().parse(['node', 'weektrace', mode, '--last-days', '7'], { run: false })
+    expect(rolling.options.lastDays).toBe(7)
+    const range = await cli.clone().parse(['node', 'weektrace', mode, '--from', '2026-10-07', '--to', '2026-10-13'], { run: false })
+    expect(range.options).toMatchObject({ from: '2026-10-07', to: '2026-10-13' })
+  }
+})
+
+test('custom cached ranges use distinct filenames and reject mismatched boundaries', async () => {
+  const root = path.resolve('weeks/.verification')
+  await fs.mkdir(root, { recursive: true })
+  const dataDir = await fs.mkdtemp(path.join(root, 'range-cli-'))
+  const options = { dataDir, from: '2026-10-05', to: '2026-10-06' }
+  const config = await resolveConfig({ options, cwd: '/' })
+  if (config instanceof Error) throw config
+  expect(config.reportKey).toBe('2026-10-05_to_2026-10-06')
+  expect(config.summary).toContain('2026-10-05_to_2026-10-06-summary.json')
+  const source = { ...fixture(), start: config.start, end: config.end }
+  await fs.mkdir(path.join(dataDir, 'evidence'))
+  const file = path.join(dataDir, 'evidence', `${config.reportKey}.json`)
+  await fs.writeFile(file, JSON.stringify(source))
+  const result = await run({ mode: 'render', cwd: '/', options })
+  if (result instanceof Error) throw result
+  if (!('html' in result)) throw new Error('Expected rendered output')
+  expect(result.html).toContain(`${config.reportKey}.html`)
+  await fs.writeFile(file, JSON.stringify(fixture()))
+  expect(await run({ mode: 'render', cwd: '/', options })).toBeInstanceOf(Error)
+})
 test('render validates config, curated summaries, filtering and output independently of source cwd', async () => {
   const root = path.resolve('weeks/.verification')
   await fs.mkdir(root, { recursive: true })
@@ -22,6 +51,7 @@ test('render validates config, curated summaries, filtering and output independe
     project: ['/synthetic/app'], excludeSession: ['ses_isolated'] } })
   expect(result).not.toBeInstanceOf(Error)
   if (result instanceof Error) throw result
+  if (!('html' in result)) throw new Error('Expected rendered output')
   expect(result.sessions).toBe(2)
   expect(result.html).toContain(dataDir)
   const html = await fs.readFile(result.html!, 'utf8')

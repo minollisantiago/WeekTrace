@@ -1,9 +1,9 @@
-# Generate a WeekTrace weekly report
+# Generate a WeekTrace activity report
 
 Read `~/.calendar/README.md`, `~/.calendar/docs/operations.md`, and
 `~/.calendar/docs/report-contract.md` before generating a report.
 
-Use an explicitly requested reporting week when provided; otherwise resolve the
+Use an explicitly requested reporting range or week when provided; otherwise resolve the
 previous complete Monday–Sunday in the configured reporting timezone (default
 America/Argentina/Buenos_Aires). Use the Node.js CLI's collect/render stages and
 pass this run's current session ID with `--exclude-session`. Reuse the packaged
@@ -20,6 +20,14 @@ kimaki upload-to-discord --session CURRENT_RUN_SESSION_ID /absolute/path/to/week
 
 Use `--week YYYY-MM-DD` instead of `--previous-week` for explicit weeks. Replace
 the ID and output path using this run's metadata and the CLI's reported output.
+For explicitly requested custom ranges, use `--from YYYY-MM-DD --to YYYY-MM-DD`
+(inclusive, 1–7 days), or `--last-days N` for 1–7 days including today. Use the
+same resolved dates for collection/rendering. Custom/rolling artifact keys are
+`YYYY-MM-DD_to_YYYY-MM-DD`, including the optional `-summary.json`.
+The CLI returns inclusive `from`/`to` dates: use those explicit flags when rendering
+a rolling collection after local midnight. Today includes only collected activity
+so far; the reporting timezone determines today's date. Reject requests longer
+than seven days rather than silently truncating them.
 
 Follow the operations recipe through evidence collection, factual three-line
 summary, rendering, verification, and attachment to this run's Discord thread.

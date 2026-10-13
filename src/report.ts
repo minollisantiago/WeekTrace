@@ -11,6 +11,12 @@ export function buildReport({ evidence: d, colors = {}, summary = null, theme = 
   evidence: Evidence; colors?: Record<string, string>; summary?: Summary | null; theme?: string
 }) {
   const palette = ['#b9a9f4', '#9edcc6', '#a4ccf5', '#f5cc9a', '#eeb8d0', '#9ed9df']
+  const boundaries = dayBoundaries(d)
+  const dayCount = boundaries.length - 1
+  const period = dayCount === 7 && Temporal.PlainDate.from(d.week).dayOfWeek === 1 ? 'week' : 'range'
+  if (dayCount < 1 || dayCount > 7 || boundaries[0] !== d.start || boundaries.at(-1) !== d.end) return new CalendarError({
+    reason: 'Evidence must cover 1 to 7 whole local calendar days. Recollect with --last-days 7 or a valid --from/--to range.',
+  })
   const projectColors = { ...colors }
   const blocks: Block[] = []
   const allRanges: Range[] = []
@@ -30,7 +36,7 @@ export function buildReport({ evidence: d, colors = {}, summary = null, theme = 
       const possible = uniqueCommits.filter(c => c.possible.includes(s.id) && !c.linked.length)
       const rs = intervals({ events: s.events, start: d.start, end: d.end })
       ranges.push(...rs)
-      const outcome = s.finals.at(-1) ?? 'No final response recorded in the reporting week; outcome unknown.'
+      const outcome = s.finals.at(-1) ?? `No final response recorded in the reporting ${period}; outcome unknown.`
       const status = !p.gitAvailable ? 'Git evidence unavailable' : linked.length ? `${linked.length} linked commits`
         : s.statusNow === 'busy' ? 'Active now · no linked commits'
           : !s.finals.length ? 'No final recorded · no linked commits' : 'No linked commits'
@@ -41,7 +47,7 @@ export function buildReport({ evidence: d, colors = {}, summary = null, theme = 
         for (const [x, y] of splitDays({ range, timezone: d.timezone })) {
           const date = localDate(x, d.timezone)
           const day = Temporal.PlainDate.from(d.week).until(date).days
-          if (day < 0 || day >= 7) continue
+          if (day < 0 || day >= dayCount) continue
           // Use wall-clock position on the 24-hour grid; elapsed duration remains actual time.
           const zoned = Temporal.Instant.fromEpochMilliseconds(Math.trunc(x)).toZonedDateTimeISO(d.timezone)
           blocks.push({ session: s.id, day, start: x, end: y,
@@ -54,7 +60,7 @@ export function buildReport({ evidence: d, colors = {}, summary = null, theme = 
     return { name: p.folder_name, directory: p.directory, color, hours: hours(ranges),
       gitAvailable: p.gitAvailable ?? false, sessions: projectSessions.length }
   })
-  for (let day = 0; day < 7; day++) {
+  for (let day = 0; day < dayCount; day++) {
     const groups: Array<{ end: number; blocks: Block[] }> = []
     for (const block of blocks.filter(b => b.day === day).sort((a, b) => a.minute - b.minute)) {
       const end = block.minute + Math.max(28, block.duration)
@@ -73,15 +79,14 @@ export function buildReport({ evidence: d, colors = {}, summary = null, theme = 
       for (const block of group.blocks) block.lanes = ends.length
     }
   }
-  const boundaries = dayBoundaries(d)
-  const daily = Array.from({ length: 7 }, (_, i) => hours(allRanges.map(([a, b]) =>
+  const daily = Array.from({ length: dayCount }, (_, i) => hours(allRanges.map(([a, b]) =>
     [Math.max(a, boundaries[i]!), Math.min(b, boundaries[i + 1]!)])))
   const notes = [...d.gaps]
   const missing = sessions.filter(s => !s.thread).length
   if (missing) notes.push(`${missing} of ${sessions.length} sessions have no original Discord thread ID in available metadata/prompts.`)
   notes.push(`Only locally retained OpenCode activity in the ${projects.length} selected registered projects is covered; deleted logs, other machines and other agent harnesses are outside this report.`,
     'Subagent sessions represented by parents are excluded; independent Kimaki review threads remain included. Delegated runtime without parent timestamp events can be undercounted.',
-    'Latest response excerpts are self-reported outcomes as of the week cutoff, not an independent shipping audit. Current idle status does not establish task completion. Historical prompts may be missing after compaction.',
+    `Latest response excerpts are self-reported outcomes as of the ${period} cutoff, not an independent shipping audit. Current idle status does not establish task completion. Historical prompts may be missing after compaction.`,
     'Repository/time-only commit matches are possible, not proven. Git commit dates use committer timestamps; unreachable/pruned commits cannot be recovered by --all.')
   const mostActive = [...projects].sort((a, b) => b.hours - a.hours)[0]
   const factual: Summary = summary ?? { lines: [
@@ -99,7 +104,7 @@ export function buildReport({ evidence: d, colors = {}, summary = null, theme = 
     inventory: d.inventory, summary: { lines: factual.lines.map(s => clean(s, 1800)),
       followups: factual.followups.map(f => ({ ...f, text: clean(f.text, 900) })) },
     branches: branches.rows, unattributedBranchCommits: branches.unknown,
-    dates: boundaries.slice(0, 7).map(ms => ms + (midnight(localDate(ms, d.timezone).add({ days: 1 }).toString(), d.timezone) - ms) / 2) }
+    dates: boundaries.slice(0, dayCount).map(ms => ms + (midnight(localDate(ms, d.timezone).add({ days: 1 }).toString(), d.timezone) - ms) / 2) }
   return { data, colors: projectColors }
 }
 export type Report = Exclude<ReturnType<typeof buildReport>, Error>['data']

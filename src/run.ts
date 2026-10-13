@@ -7,22 +7,24 @@ import { buildReport } from './report.ts'
 import { renderHtml } from './render.ts'
 import { evidenceSchema, summarySchema, type Evidence } from './schema.ts'
 import { readJson, writeFile } from './io.ts'
+import { localDate } from './time.ts'
 
 export async function run({ mode, options, cwd }: { mode: 'report' | 'collect' | 'render'; options: Options; cwd: string }) {
   const config = await resolveConfig({ options, cwd })
   if (config instanceof Error) return config
-  const evidencePath = path.join(config.dataDir, 'evidence', `${config.week}.json`)
+  const dates = { from: config.week, to: localDate(config.end, config.timezone).subtract({ days: 1 }).toString() }
+  const evidencePath = path.join(config.dataDir, 'evidence', `${config.reportKey}.json`)
   const source = mode === 'render' ? await readJson({ file: evidencePath, schema: evidenceSchema }) : await collect(config)
   if (source instanceof Error) return source
   if (!source) return new CalendarError({ reason: 'Evidence missing. Run collect --week YYYY-MM-DD before render.' })
   if (source.week !== config.week || source.timezone !== config.timezone || source.start !== config.start || source.end !== config.end) {
-    return new CalendarError({ reason: 'Evidence week/timezone boundaries do not match. Rerun collect with the requested --week and --timezone.' })
+    return new CalendarError({ reason: 'Evidence range/timezone boundaries do not match. Rerun collect with the same date selection and --timezone.' })
   }
   if (mode !== 'render') {
     const saved = await writeFile({ file: evidencePath, contents: JSON.stringify(source, null, 2) + '\n' })
     if (saved instanceof Error) return saved
   }
-  if (mode === 'collect') return { week: config.week, evidence: evidencePath, sessions: source.sessions.length, commits: source.commits.length, gaps: source.gaps }
+  if (mode === 'collect') return { week: config.week, ...dates, timezone: config.timezone, evidence: evidencePath, sessions: source.sessions.length, commits: source.commits.length, gaps: source.gaps }
   const summary = await readJson({ file: config.summary, schema: summarySchema, optional: !options.summary })
   if (summary instanceof Error) return summary
   const colors = await readJson({ file: path.join(config.dataDir, 'preferences.json'),
@@ -48,13 +50,13 @@ export async function run({ mode, options, cwd }: { mode: 'report' | 'collect' |
   if (built instanceof Error) return built
   const html = await renderHtml(built.data)
   if (html instanceof Error) return html
-  const reportPath = path.join(config.outputDir, `${config.week}.html`)
-  const summaryPath = path.join(config.outputDir, `${config.week}.md`)
+  const reportPath = path.join(config.outputDir, `${config.reportKey}.html`)
+  const summaryPath = path.join(config.outputDir, `${config.reportKey}.md`)
   for (const [file, contents] of [[reportPath, html], [summaryPath, built.data.summary.lines.join('\n') + '\n'],
     [path.join(config.dataDir, 'preferences.json'), JSON.stringify(built.colors, null, 2) + '\n']] as const) {
     const saved = await writeFile({ file, contents })
     if (saved instanceof Error) return saved
   }
-  return { week: config.week, timezone: config.timezone, html: reportPath, summary: summaryPath,
+  return { week: config.week, ...dates, timezone: config.timezone, html: reportPath, summary: summaryPath,
     sessions: built.data.sessions.length, estimatedHours: built.data.hours, commits: built.data.commits, gaps: evidence.gaps }
 }

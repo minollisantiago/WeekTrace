@@ -32,6 +32,12 @@ The shared report template embeds the logo inline and the favicon as a data URL.
 No logo/font request is required. `assets/weektrace.svg` is included in local
 tarballs for reuse, while personal reports and evidence stay outside distribution.
 
+The same identity and tagline apply to weekly reports and on-demand 1–7-day
+reports. Custom `--from`/`--to` dates are inclusive; `--last-days N` includes today.
+Display the actual selected dates in report headings and browser titles, with
+matching weekday labels, grid columns, and phone agenda days. See the
+[report contract](report-contract.md) for timezone and range semantics.
+
 Existing `~/.calendar` storage, task-file paths, and browser theme-preference key
 are retained so the brand change preserves existing reports and preferences.
 The local CLI now runs as `weektrace`; reinstall the local tarball to replace the

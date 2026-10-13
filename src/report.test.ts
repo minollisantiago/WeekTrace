@@ -4,7 +4,7 @@ import { expect, test } from 'vitest'
 import { fixture } from './fixtures.ts'
 import { buildReport } from './report.ts'
 import { renderHtml } from './render.ts'
-import { midnight, resolveWeek } from './time.ts'
+import { midnight, resolveWeek, resolveRange } from './time.ts'
 import { baselineReport } from './baseline-report.fixture.ts'
 
 test('normalized report matches the frozen reference on synthetic evidence', async () => {
@@ -78,4 +78,23 @@ test('empty and malicious-text reports stay portable and safely serialized', asy
   if (empty instanceof Error) throw empty
   expect(empty.data.hours).toBe(0)
   expect(empty.data.daily).toEqual([0, 0, 0, 0, 0, 0, 0])
+})
+
+test.each([1, 3, 7])('custom %i-day report clips totals and generates only selected dates', async days => {
+  const range = resolveRange({ from: '2026-10-07', to: `2026-10-${String(6 + days).padStart(2, '0')}`, timezone: 'UTC' })
+  if (range instanceof Error) throw range
+  const original = fixture()
+  const evidence = { ...original, ...range, sessions: [{ ...original.sessions[0]!, events: [
+    range.start - 600_000, range.start + 600_000, range.end - 600_000, range.end + 600_000,
+  ] }] }
+  const result = buildReport({ evidence })
+  if (result instanceof Error) throw result
+  expect(result.data.daily).toHaveLength(days)
+  expect(result.data.dates).toHaveLength(days)
+  expect(result.data.hours).toBeCloseTo(1 / 3)
+  expect(result.data.blocks.map(b => b.day)).toEqual([0, days - 1])
+  const html = await renderHtml(result.data)
+  if (html instanceof Error) throw html
+  await fs.mkdir('weeks/.verification', { recursive: true })
+  await fs.writeFile(`weeks/.verification/range-${days}.html`, html)
 })

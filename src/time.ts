@@ -61,7 +61,27 @@ export function splitDays({ range: [a, b], timezone }: { range: Range; timezone:
   }
   return pieces
 }
-export function dayBoundaries({ week, timezone }: { week: string; timezone: string }) {
+export function resolveRange({ week, previousWeek, from, to, lastDays, timezone, now = Date.now() }: {
+  week?: string; previousWeek?: boolean; from?: string; to?: string; lastDays?: number; timezone: string; now?: number
+}) {
+  const custom = from !== undefined || to !== undefined
+  const modes = Number(week !== undefined) + Number(Boolean(previousWeek)) + Number(custom) + Number(lastDays !== undefined)
+  if (modes !== 1) return new CalendarError({ reason: 'Choose exactly one: --week YYYY-MM-DD, --previous-week, --from YYYY-MM-DD --to YYYY-MM-DD, or --last-days 1..7.' })
+  if (!custom && lastDays === undefined) return resolveWeek({ week, previousWeek, timezone, now })
+  if (custom && (from === undefined || to === undefined)) return new CalendarError({ reason: 'Supply both --from YYYY-MM-DD and --to YYYY-MM-DD (inclusive).' })
+  if (lastDays !== undefined && (!Number.isInteger(lastDays) || lastDays < 1 || lastDays > 7)) return new CalendarError({ reason: 'Use --last-days with an integer from 1 to 7, including today.' })
+  return boundary(() => {
+    const last = custom ? Temporal.PlainDate.from(to!) : localDate(now, timezone)
+    const first = custom ? Temporal.PlainDate.from(from!) : last.subtract({ days: lastDays! - 1 })
+    if (custom && (first.toString() !== from || last.toString() !== to)) return new CalendarError({ reason: 'Use --from and --to dates in exact YYYY-MM-DD format.' })
+    const days = first.until(last).days + 1
+    if (days < 1 || days > 7) return new CalendarError({ reason: 'Report ranges must contain 1 to 7 inclusive calendar days. Set --to on or within six days after --from.' })
+    return { week: first.toString(), timezone, start: midnight(first.toString(), timezone),
+      end: midnight(last.add({ days: 1 }).toString(), timezone) }
+  }, 'Invalid range or timezone. Use --from YYYY-MM-DD --to YYYY-MM-DD and an IANA --timezone.')
+}
+export function dayBoundaries({ week, timezone, end }: { week: string; timezone: string; end?: number }) {
   const date = Temporal.PlainDate.from(week)
-  return Array.from({ length: 8 }, (_, i) => midnight(date.add({ days: i }).toString(), timezone))
+  const days = end === undefined ? 7 : date.until(localDate(end, timezone)).days
+  return Array.from({ length: days + 1 }, (_, i) => midnight(date.add({ days: i }).toString(), timezone))
 }

@@ -9,7 +9,7 @@ Kimaki discovery → documented OpenCode GET APIs + Git adapter
                     ↓
 Typed, sanitized evidence with provenance and visible coverage gaps
                     ↓
-Temporal week boundaries → intervals, union totals and branch attribution
+Temporal 1–7-day boundaries → intervals, union totals and branch attribution
                     ↓
 Approved HTML template + embedded font/license + evidenced/fallback summary
                     ↓
@@ -35,15 +35,29 @@ the compiler rewrites them to `.js` in `dist/`.
 Keeping the approved template retains
 the separately approved hover-card improvements committed during migration planning.
 The template includes WeekTrace's approved identity and embedded favicon, plus
-timezone-correct date labels and configurable theme defaults.
+timezone-correct date labels, configurable theme defaults, and grids/agendas that
+adapt to 1–7 selected days.
 
 ## CLI and runtime
 
 `report` collects and renders; `collect` and `render` expose the same stages for
-agent-curated summaries. Both explicit Monday and previous-complete-week modes
-support timezone, repeatable project filters, automatic per-project server
+agent-curated summaries. All three commands accept exactly one date-selection mode:
+an explicit Monday (`--week`), the previous complete week (`--previous-week`),
+inclusive custom dates (`--from` and `--to`), or a rolling range including today
+(`--last-days N`). Ranges contain 1–7 calendar days in the configured timezone;
+today contains only activity collected so far. Oversized, reversed, incomplete,
+malformed, and conflicting selections fail validation before collection.
+
+Every mode supports timezone, repeatable project filters, automatic per-project server
 discovery, output/runtime paths, explicit reporting-session exclusions, and
 curated summary input. CLI overrides local config, then defaults apply.
+
+`resolveRange` is exported alongside `resolveWeek`. Evidence retains its compatible
+`week` field as the first selected date, with `start`/`end` recording local midnight
+boundaries. CLI results additionally expose inclusive `from`/`to` dates. Weekly
+artifact keys remain `YYYY-MM-DD`; custom/rolling keys use
+`YYYY-MM-DD_to_YYYY-MM-DD` for evidence, HTML, Markdown, and curated summaries.
+Pin the resolved dates for cached rendering when a rolling run crosses midnight.
 
 Default runtime storage remains `~/.calendar`, but package assets have no dependency
 on installation there. Configured runtime paths must be writable and personal.
@@ -57,7 +71,10 @@ delivery profiles. No Discord IDs or OpenCode port are embedded in package defau
 - Test DST weeks, local Monday boundaries, old-session actual activity, branch
   conflicts/prefix ambiguity, safe serialization, curated follow-ups, configuration,
   project filtering, documented API limits, and commit-tree file evidence.
+- Test inclusive 1–7-day ranges, single-day DST changes, rolling timezone boundaries,
+  invalid/conflicting selections, range-specific cache names, and clipped totals.
 - Verify browser controls offline at desktop, 1032px stacking, and phone sizes.
+  Include 1-, 3-, and 7-day reports, actual weekday labels, and day filtering.
 - Install a local npm tarball, inspect its file list, and execute the installed CLI
   outside the source root using npm's npx execution interface.
 - Exercise real automatic discovery and a scheduler-style previous-week invocation.

@@ -1,7 +1,7 @@
 export { collect, normalizeSession } from './collect.ts'
 export { buildReport } from './report.ts'
 export { renderHtml, safeJson } from './render.ts'
-export { resolveWeek, intervals, merge, hours, splitDays } from './time.ts'
+export { resolveWeek, resolveRange, intervals, merge, hours, splitDays } from './time.ts'
 export { branchTotals } from './evidence.ts'
 export { run } from './run.ts'
 export type { Evidence, Session, Commit, Project, Summary } from './schema.ts'
