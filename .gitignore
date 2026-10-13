@@ -1,0 +1,15 @@
+# Personal activity, generated reports, and machine-local settings.
+/evidence/
+/weeks/
+/preferences.json
+/local-profile.json
+/.kimaki/
+/.env
+/.env.*
+/.playwriter-*
+
+# Python/tooling caches.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.DS_Store
