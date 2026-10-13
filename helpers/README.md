@@ -40,7 +40,13 @@ The template uses safe embedded JSON and DOM text nodes, no frameworks, remote
 assets, or service. JetBrains Mono is embedded from `fonts/JetBrainsMono-Regular.woff2`
 with its SIL Open Font License included in the HTML; no font request is needed.
 Compact blocks hide their labels using size container queries and reveal details
-on hover or keyboard focus. Striped fills with 2px `#ff6665` borders distinguish
+on hover or keyboard focus. Event previews in the grid and agenda use structured
+dark cards with a bold title, muted date/time/duration line, a project pill, models,
+commit and unique changed-file counts, first prompt and up to three commit subjects.
+Only confirmed session commits supply these counts; possible matches are excluded.
+Previews sit to the right when space allows and fit above/below on narrow screens,
+remain open when hovered, and dismiss with Escape or scrolling. Touch opens the inspection
+dialog directly. Striped fills with 2px `#ff6665` borders distinguish
 sessions without confirmed linked commits; other event cards stay borderless.
 The segmented theme picker sits above the calendar, aligned to its right edge.
 It offers a lighter Pink `#F77C9D` (default), Lavender
