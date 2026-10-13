@@ -100,7 +100,79 @@ metadata; the CLI does not interpret it.
 source evidence. An agent must pass its current reporting session ID with
 `--exclude-session`, rather than relying on the retained title heuristic alone.
 
-## 3. Curated summaries and offline reports
+## 3. Ask an agent for a calendar report
+
+After local setup, paste these prompts into a Kimaki Discord thread or a local
+coding-agent session with access to WeekTrace and your retained activity logs.
+The agent handles collection, an evidence-based summary, rendering, and delivery.
+In Kimaki, the HTML can be attached directly to the current thread; in a local
+session, ask for the generated file path and open it in your browser.
+
+**First request, including the reporting instructions:**
+
+```text
+Read ~/.calendar/tasks/weekly-work-calendar.md and follow its linked operations
+and report-contract instructions. Generate my calendar report for the last
+7 calendar days including today, using my configured reporting timezone and
+all locally registered projects. Exclude this report-generation session, inspect
+the evidence, and write the three-line summary with only evidenced follow-ups.
+Keep the same resolved dates for collection and rendering. Verify the offline
+HTML, then attach it to this Discord thread if running in Kimaki, or give me
+its absolute file path. Include the dates, estimated session activity, and
+any coverage gaps in your response.
+```
+
+Replace `~/.calendar` if your checkout is elsewhere. Once the agent has the
+reporting instructions, use any of these shorter copy-paste requests.
+
+**Last seven days, including today:**
+
+```text
+Generate my calendar report for the last 7 calendar days including today.
+Use my configured timezone, include all locally registered projects, and
+deliver the offline HTML with a concise evidence-based summary.
+```
+
+**Today only:**
+
+```text
+Generate my calendar report for today only, using my configured reporting
+timezone. Include activity collected so far and deliver the offline HTML.
+```
+
+**Previous complete week:**
+
+```text
+Generate my calendar report for the previous complete Monday–Sunday in my
+configured reporting timezone. Deliver the offline HTML and summarize the
+evidenced accomplishments, most-active project, and explicit follow-ups.
+```
+
+**Specific inclusive dates:**
+
+```text
+Generate my calendar report from 2026-10-07 through 2026-10-13, including
+both dates. Use my configured reporting timezone and deliver the offline HTML.
+```
+
+**One project and an explicit timezone:**
+
+```text
+Generate my calendar report for the last 3 calendar days including today,
+using Europe/London as the reporting timezone. Include only the locally
+registered project at /absolute/path/to/repo and deliver the offline HTML.
+```
+
+Replace the example dates and project path with yours. You can also request
+several registered project paths in the same prompt. Source-project selection
+controls which activity is included; delivery goes to the current reporting thread.
+
+Every report is limited to **1–7 inclusive local calendar days**. Today contains
+only activity collected so far. Without a requested range or week, the agent
+uses the previous complete Monday–Sunday. Totals describe **estimated session
+activity**, and the summary reports unavailable sources as coverage gaps.
+
+## 4. Curated summaries and offline reports
 
 ```sh
 node dist/cli.js collect --week 2026-10-05
@@ -148,7 +220,7 @@ resolves them relative to its package, independently of cwd and runtime storage.
 Personal `evidence/`, `weeks/`, `preferences.json`, `config.json`, and
 `local-profile.json` are ignored and excluded from the tarball.
 
-## 4. Local npm installation and npx execution
+## 5. Local npm installation and npx execution
 
 ```sh
 npm pack --pack-destination weeks
@@ -162,7 +234,7 @@ npm exec --prefix /path/to/local-install -- weektrace report --previous-week
 There is no registry installation command yet. The package is private and its
 publication script is disabled pending registry and licensing decisions.
 
-## 5. Scheduling and Discord delivery
+## 6. Scheduling and Discord delivery
 
 Use the same `report` command from an OS scheduler, or have a Kimaki reporting
 agent run `collect`, supply an evidenced summary, then `render` and upload.
