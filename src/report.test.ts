@@ -1,36 +1,22 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import childProcess from 'node:child_process'
-import util from 'node:util'
 import { expect, test } from 'vitest'
 import { fixture } from './fixtures.ts'
 import { buildReport } from './report.ts'
 import { renderHtml } from './render.ts'
 import { midnight, resolveWeek } from './time.ts'
+import { baselineReport } from './baseline-report.fixture.ts'
 
-const execFile = util.promisify(childProcess.execFile)
-test('normalized report matches the Python renderer on synthetic evidence', async () => {
+test('normalized report matches the frozen reference on synthetic evidence', async () => {
   const root = path.resolve('weeks/.verification')
   await fs.mkdir(root, { recursive: true })
-  const tmp = await fs.mkdtemp(path.join(root, 'parity-'))
-  await fs.mkdir(path.join(tmp, 'evidence'))
-  await fs.mkdir(path.join(tmp, 'weeks'))
-  await fs.symlink(path.resolve('helpers'), path.join(tmp, 'helpers'))
-  await fs.symlink(path.resolve('fonts'), path.join(tmp, 'fonts'))
   const evidence = fixture()
-  const file = path.join(tmp, 'input.json')
-  await fs.writeFile(file, JSON.stringify(evidence))
-  const python = await execFile('python', ['-c',
-    'import sys,json,pathlib,contextlib,io;sys.path.insert(0,sys.argv[1]);import generate;generate.ROOT=pathlib.Path(sys.argv[2]);d=json.loads(pathlib.Path(sys.argv[3]).read_text());out=io.StringIO();\nwith contextlib.redirect_stdout(out): result=generate.build(d)\nprint(json.dumps(result))',
-    path.resolve('helpers'), tmp, file])
-  const reference = JSON.parse(python.stdout) as Record<string, object>
   const report = buildReport({ evidence })
   expect(report).not.toBeInstanceOf(Error)
   if (report instanceof Error) return
-  const { theme: _theme, dates: _dates, ...actual } = report.data
-  // Coverage wording removes the baseline's hardcoded "two registered projects".
-  reference.notes = actual.notes
-  expect(actual).toEqual(reference)
+  // Branding/date additions and evolved coverage prose are outside baseline parity.
+  const { theme: _theme, dates: _dates, notes: _notes, ...actual } = report.data
+  expect(actual).toEqual(baselineReport)
   const html = await renderHtml(report.data)
   expect(html).not.toBeInstanceOf(Error)
   if (html instanceof Error) return

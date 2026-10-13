@@ -1,7 +1,7 @@
 # Documentation
 
 Start with the [project README](../README.md) for installation, on-demand runs,
-project scope, scheduling, external-user setup, and the Python/Node.js decision.
+project scope, scheduling, external-user setup, and the TypeScript-only workflow.
 
 - [Operations](operations.md): the agent's generation, verification, and delivery recipe.
 - [Report contract](report-contract.md): evidence, time, commits, branches, and output semantics.

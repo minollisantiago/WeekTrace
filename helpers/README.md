@@ -4,33 +4,32 @@ The shared template embeds WeekTrace's approved handwritten W and favicon; the
 editable mark is `assets/weektrace.svg`. Brand rose stays `#F23568`, independently
 of the report's five selectable theme accents. See `docs/branding.md`.
 
-The Node.js/TypeScript CLI is now the portable generation engine. See the root
-README for `report`, `collect`, `render`, configuration, and local tarball setup.
-These Python commands remain the reference workflow and support the unchanged
-existing scheduled task. This directory's template is shared by both engines;
-the npm package includes the template and this design reference, not Python code.
+The Node.js/TypeScript CLI is the sole generation engine. This directory contains
+the approved HTML/CSS template and its design reference. See the root README for
+`report`, `collect`, `render`, configuration, and local tarball setup.
 
 TypeScript assets resolve relative to the installed package. Runtime storage
 defaults to `~/.calendar` and can be relocated with `--data-dir`. The CLI uses
 timezone-aware local midnights for DST weeks and accepts explicit session exclusions.
-Run `npm run check` for engine parity and `npm run verify:package` for local
-installation checks. Python commands below require the source checkout.
+Run `npm run check` for baseline regressions and `npm run verify:package` for local
+installation checks. The frozen synthetic report fixture preserves the retired
+engine's behavior without requiring another interpreter.
 
-Run from any directory using standard-library Python:
+Run from any directory using the built CLI:
 
 ```sh
-python ~/.calendar/helpers/collect.py --week YYYY-MM-DD --api http://127.0.0.1:PORT
-python ~/.calendar/helpers/test_timing.py
-python ~/.calendar/helpers/generate.py --week YYYY-MM-DD
+node ~/.calendar/dist/cli.js collect --previous-week --exclude-session CURRENT_RUN_SESSION_ID
+node ~/.calendar/dist/cli.js render --previous-week --exclude-session CURRENT_RUN_SESSION_ID
 ```
 
-Use the reporting Monday in America/Argentina/Buenos_Aires. Find the current
-OpenCode server port from Kimaki CLI discovery output. `collect.py` uses only
-documented GET routes from that server's `/doc`: `/session` (large explicit limit,
-project scope includes worktree sessions) and `/session/{id}/message` (no limit
-returns all available messages). Session creation/update times only select
-candidates; they never establish duration. Kimaki's latest-100 list supplements
-status/thread metadata; older thread IDs are taken from stored prompt metadata.
+Use `--week YYYY-MM-DD` for an explicit reporting Monday; `--timezone` overrides
+the default America/Argentina/Buenos_Aires. Collection discovers OpenCode servers
+through Kimaki and verifies their `/doc`: `/session` uses a large documented limit
+and project scope where available, and session messages are requested without a
+limit. Inventory limits, unavailable worktree scope, and uncertain completeness
+remain visible gaps. Creation/update times select candidates but never establish
+duration. Kimaki recent metadata supplements status/thread information; older
+thread IDs are taken from retained prompt metadata.
 
 Artifacts stay here: sanitized evidence in `evidence/`, stable project colors in
 `preferences.json`, reports and factual three-line summaries in `weeks/`.
@@ -85,7 +84,7 @@ in-week prompt branch markers, successful branch switches, and commit output.
 Branch commit counts require original `git commit` branch/hash output and are
 deduplicated by repository/hash. Current branch containment is never used as
 historical attribution. Missing/conflicting branch evidence is reported as unknown.
-Validate attribution with `python ~/.calendar/helpers/test_branches.py`.
+Validate attribution with `npm run check` from the source checkout.
 Native dialogs support keyboard activation, Escape and focus
 restoration. Agenda/day filtering provides a readable phone layout. Colors and
 template persist across weeks. Design guidance consulted: https://impeccable.style/

@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest'
 import { hours, intervals, merge, midnight, resolveWeek, splitDays, DEFAULT_TIMEZONE } from './time.ts'
 import { safeJson } from './render.ts'
 
-describe('Python timing reference cases', () => {
+describe('Timing baseline cases', () => {
   test('overlaps and adjacent intervals count once', () => {
     expect(merge([[0, 10], [5, 20], [20, 30], [50, 60]])).toEqual([[0, 30], [50, 60]])
     expect(hours([[0, 3_600_000], [1_800_000, 5_400_000]])).toBe(1.5)

@@ -79,7 +79,7 @@
    report records unavailable sources and emits a coverage warning on stderr;
    validation or fatal setup failures exit nonzero. Successful partial output is retained.
 8. Verify offline opening and zero network requests. For engine changes, run
-   `npm run check` plus the Python reference tests. For renderer changes, check
+   `npm run check`, which includes frozen baseline regression checks. For renderer changes, check
    details, long titles, keyboard/Escape/focus restoration, theme choices, phone
    agenda, 1032px stacking, and toolbar alignment above 1900px.
 9. Upload with this run's current Kimaki session ID:
@@ -102,8 +102,9 @@ is UTC; report-week boundaries are local and DST-aware. Choose the scheduler tim
 separately from the reporting timezone, with no assumption that missed runs replay.
 
 Existing task #1 remains in TsCanvas, reads its task file there, and runs Monday
-`0 12 * * 1`. This migration does not move, replace, or edit it. Python helpers
-remain available for that existing workflow. A switch requires explicit user approval.
+`0 12 * * 1`. Its task instructions permit similarly lightweight tooling, so the
+Node CLI can be invoked from the delivery project using its absolute path. The
+task definition and schedule are preserved; retargeting requires explicit approval.
 
 For a new deployment, install the local tarball, configure source registrations and
 timezone, verify an explicit week and a previous-week invocation, then configure
@@ -115,16 +116,16 @@ Optional ignored `local-profile.json` supplies agent-only delivery preferences,
 such as a Discord owner ID to mention. The CLI does not parse it. Without configured
 preferences, attach without guessing an owner.
 
-## Python reference workflow
+## Run from a delivery project
 
-The preserved source-checkout commands are:
+When the agent's working directory is TsCanvas or another delivery project, use
+the built CLI's absolute path rather than a relative `dist/cli.js`:
 
 ```sh
-python helpers/collect.py --week YYYY-MM-DD --api http://127.0.0.1:PORT
-python helpers/generate.py --week YYYY-MM-DD
-python helpers/test_timing.py
-python helpers/test_branches.py
+node ~/.calendar/dist/cli.js collect --previous-week --exclude-session CURRENT_RUN_SESSION_ID
+node ~/.calendar/dist/cli.js render --previous-week --exclude-session CURRENT_RUN_SESSION_ID
 ```
 
-Python uses the original fixed `~/.calendar` asset/runtime layout, fixed Buenos
-Aires timezone, and all-project scope. It does not implement the new CLI flags.
+Use the installed local `weektrace` executable instead when available. Both
+invocations resolve packaged assets independently of cwd. The retired interpreter
+pipeline is no longer part of generation or verification.

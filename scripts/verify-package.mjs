@@ -18,6 +18,7 @@ const info = JSON.parse(packed.stdout)[0]
 const files = info.files.map(f => f.path)
 const forbidden = files.filter(f => /^(evidence\/|weeks\/|preferences\.json$|local-profile\.json$|config\.json$|\.env)/.test(f))
 if (forbidden.length) throw new Error(`Runtime files in tarball: ${forbidden.join(', ')}`)
+if (files.some(f => /\.py(?:[co])?$/.test(f))) throw new Error('Retired Python files in tarball')
 for (const asset of ['assets/weektrace.svg', 'helpers/template.html', 'fonts/JetBrainsMono-Regular.woff2', 'fonts/OFL.txt', 'dist/cli.js']) {
   if (!files.includes(asset)) throw new Error(`Missing asset: ${asset}`)
 }

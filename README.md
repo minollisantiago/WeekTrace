@@ -8,8 +8,8 @@ Generate a self-contained weekly HTML calendar from locally retained OpenCode
 sessions, registered Kimaki projects, and Git evidence. Reports open offline,
 with an embedded font, theme picker, keyboard-accessible details, and phone agenda.
 
-The shared **Node.js/TypeScript CLI** now handles on-demand and scheduler-driven
-generation. The Python helpers remain a reference implementation. No package has
+The shared **Node.js/TypeScript CLI** handles on-demand and scheduler-driven
+generation and all development checks. No package has
 been published. The approved product name is **WeekTrace**, with `weektrace` as
 the private local package and CLI name. Source lives at
 [minollisantiago/WeekTrace](https://github.com/minollisantiago/WeekTrace).
@@ -19,8 +19,8 @@ The bundled font retains its SIL Open Font License.
 ## 1. Install and run locally
 
 Requirements: **Node.js 22+**, Git, the Kimaki CLI, and access to local OpenCode
-servers retaining the sessions to report. Python 3.9+ is needed only for baseline
-parity tests, not for the installed CLI.
+servers retaining the sessions to report. No Python interpreter is required for
+generation, testing, or package verification.
 
 ```sh
 git clone https://github.com/minollisantiago/WeekTrace.git
@@ -142,8 +142,9 @@ Scheduling remains external to the CLI. Kimaki cron expressions are UTC;
 reporting-week boundaries use the configured local timezone and account for DST.
 
 **Existing task #1 stays in TsCanvas**, on its existing Monday `0 12 * * 1`
-schedule and task file. This migration does not retarget or modify it. The Python
-reference helpers and default runtime layout remain available for that workflow.
+schedule and task file. Its instructions permit lightweight tooling; use the Node
+CLI via its absolute path when running from a delivery project. The task and
+default runtime layout are preserved.
 
 Read [operations](docs/operations.md) before generating or attaching a report.
 
@@ -158,15 +159,17 @@ with `weektrace completions uninstall`. From source, use
 
 ```sh
 npm run check
-python helpers/test_timing.py
-python helpers/test_branches.py
 npm run verify:package
 ```
 
-TypeScript tests cover the eight baseline cases, synthetic whole-report parity,
+TypeScript tests cover the eight baseline cases, frozen synthetic whole-report parity,
 DST/week boundaries, safe embedding, source adapters, and CLI configuration and
 filtering. Packaging verification installs a local tarball and executes it away
 from the source root, with all temporary artifacts under ignored `weeks/`.
+
+The old Python collector, renderer, and test scripts have been retired. Their
+synthetic report output is retained in `src/baseline-report.fixture.ts`, while
+the original implementation remains in Git history. Regression checks need only Node.
 
 For UI changes, verify offline opening, themes, keyboard details/Escape/focus,
 phone agenda, 1032px stacking, and wide alignment. See

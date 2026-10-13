@@ -29,14 +29,13 @@ the compiler rewrites them to `.js` in `dist/`.
 - `src/render.ts`: package-relative asset loading and safe one-pass embedding.
 - `assets/weektrace.svg`: approved WeekTrace handwritten W mark.
 - `helpers/template.html`, `fonts/`: shared approved design and offline assets.
-- `helpers/*.py`: untouched Python reference engine and eight regression tests.
+- `src/baseline-report.fixture.ts`: frozen synthetic output from the retired reference engine.
 - `scripts/verify-package.mjs`: local tarball inspection and installed CLI execution.
 
-Keeping one shared template avoids divergent Python/TypeScript designs and retains
+Keeping the approved template retains
 the separately approved hover-card improvements committed during migration planning.
 The template includes WeekTrace's approved identity and embedded favicon, plus
-timezone-correct date labels and configurable theme defaults. Python reports retain
-their existing date fallback and pink theme default.
+timezone-correct date labels and configurable theme defaults.
 
 ## CLI and runtime
 
@@ -53,8 +52,8 @@ delivery profiles. No Discord IDs or OpenCode port are embedded in package defau
 
 ## Verification gates
 
-- Re-run the 8 Python tests and reproduce their cases in TypeScript.
-- Compare normalized whole-report data against Python using synthetic evidence.
+- Run the 8 baseline timing/branch cases ported to TypeScript.
+- Compare normalized whole-report data against frozen synthetic reference output.
 - Test DST weeks, local Monday boundaries, old-session actual activity, branch
   conflicts/prefix ambiguity, safe serialization, curated follow-ups, configuration,
   project filtering, documented API limits, and commit-tree file evidence.
@@ -63,8 +62,22 @@ delivery profiles. No Discord IDs or OpenCode port are embedded in package defau
   outside the source root using npm's npx execution interface.
 - Exercise real automatic discovery and a scheduler-style previous-week invocation.
 
-Run `npm run check` and `npm run verify:package` from a source checkout. Python is
-required for parity development tests only; shipped report generation uses Node.
+Run `npm run check` and `npm run verify:package` from a source checkout. Development
+checks and local package verification require Node.js and Git; real collection also
+uses the Kimaki CLI and local OpenCode servers. No Python interpreter is required.
+
+## Reference pipeline retirement
+
+The Python collector, renderer, and test helpers were removed after the TypeScript
+engine passed whole-report parity and generated a real all-project report. Before
+removal, all eight reference tests passed and the old renderer's output was captured
+using the synthetic input in `src/fixtures.ts`. The resulting independent fixture
+is `src/baseline-report.fixture.ts`; it is not regenerated from the implementation
+under test. Coverage wording and newer branding/date fields are outside this parity
+comparison, matching the previous live-reference test's scope.
+
+The original reference implementation remains accessible in Git history at
+`20cc40a`. It is not part of any current build, test, collection, or rendering path.
 
 ## Publication remains deferred
 
@@ -76,5 +89,6 @@ with repository/homepage/issue metadata configured. No public registry command i
 documented as available.
 
 Scheduling and delivery remain Kimaki/OS orchestration. Existing task #1 in TsCanvas
-is preserved and continues to use its existing Python workflow until the user
-explicitly approves a schedule/task change.
+is preserved. Its task file permits equivalent lightweight tooling; the Node CLI
+works from that delivery project with an absolute executable path. A schedule/task
+retargeting still requires explicit approval.
