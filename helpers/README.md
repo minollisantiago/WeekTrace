@@ -73,15 +73,25 @@ commit and unique changed-file counts, first prompt and up to three commit subje
 Only confirmed session commits supply these counts; possible matches are excluded.
 Previews sit to the right when space allows and fit above/below on narrow screens,
 remain open when hovered, and dismiss with Escape or scrolling. Touch opens the inspection
-dialog directly. Striped fills with 2px `#ff6665` borders distinguish
-sessions without confirmed linked commits; other event cards stay borderless.
+dialog directly. Striped grid fills distinguish sessions without confirmed linked
+commits; all calendar and agenda event cards are borderless.
 The segmented accent picker and sun/moon appearance toggle sit in the header's
 top-right corner, aligned to the summary card's right edge. On narrow phones they
 wrap below the brand, retaining that right alignment.
 It offers a lighter Pink `#F77C9D` (default), Lavender
 `#B1A7F2`, Blue `#88C1F2`, Green `#8FD9AF`, and Peach `#F2BE7E`. It updates
-event fills, activity bars, active controls, links, and the inspection border.
-Non-commit borders remain `#ff6665`; project identity colors remain separate.
+activity bars, active controls, links, and the inspection border.
+Projects receive distinct colors in that palette order, starting with default Pink.
+Only projects with recorded session activity in the selected dates are displayed;
+isolated timestamp events remain visible even though they add zero estimated hours.
+Calendar blocks, preview pills, and summary swatches use the same stable project
+color independently of the selected theme accent. Unlinked calendar blocks retain
+project-colored stripes without borders. Agenda cards keep their original
+neutral, theme-aware surfaces and muted metadata, without borders.
+After the five palette colors, generation assigns unique pastel colors without
+cycling. Agents can choose additional hex colors in `preferences.json` before
+rendering; assignments persist across reports. Legacy automatic colors migrate
+to the picker palette on the next render; other saved custom colors are retained.
 The selected swatch has a checkmark. Tab/Enter and arrow keys work; the selection
 is restored from browser local storage when available, otherwise pink is used.
 Light/dark appearance is independent of the accent. It follows the device preference

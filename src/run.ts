@@ -46,7 +46,10 @@ export async function run({ mode, options, cwd }: { mode: 'report' | 'collect' |
     evidence.commits = source.commits.filter(c => repositories.has(c.repository)).map(c => ({ ...c,
       linked: c.linked.filter(l => ids.has(l.id)), possible: c.possible.filter(id => ids.has(id)) }))
   }
-  const built = buildReport({ evidence, colors: colors ?? {}, summary, theme: config.theme })
+  // Migrate the former automatic palette while retaining agent-selected custom colors.
+  const legacyColors = new Set(['#b9a9f4', '#9edcc6', '#a4ccf5', '#f5cc9a', '#eeb8d0', '#9ed9df'])
+  const projectColors = Object.fromEntries(Object.entries(colors ?? {}).filter(([, color]) => !legacyColors.has(color.toLowerCase())))
+  const built = buildReport({ evidence, colors: projectColors, summary, theme: config.theme })
   if (built instanceof Error) return built
   const html = await renderHtml(built.data)
   if (html instanceof Error) return html

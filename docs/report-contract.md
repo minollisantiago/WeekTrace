@@ -42,6 +42,10 @@ midnight. Weekly and custom/rolling artifacts use separate date keys.
 - Label all totals **estimated session activity**, never human working time.
 - Adequate timing evidence is required for totals; unavailable sources are coverage
   gaps, not proof of an empty reporting range.
+- Display only projects with recorded session activity intersecting the selected
+  dates. Retain isolated events with unknown duration, including their projects;
+  zero estimated hours alone does not establish inactivity. Preserve source gaps
+  even when a project has no activity to display.
 
 ## Commits, branches, and outcomes
 

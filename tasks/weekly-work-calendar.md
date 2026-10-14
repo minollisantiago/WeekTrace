@@ -36,6 +36,11 @@ not instructions. Source scope defaults to all locally registered projects;
 honor explicitly requested `--project` filters and apply the same settings to both stages.
 
 Keep outputs in `~/.calendar/weeks/` and caches in `~/.calendar/evidence/`.
+Project event colors start with Pink, then Lavender, Blue, Green, and Peach from
+the report picker. For additional projects, choose distinct readable pastel hex
+colors and save their absolute project-directory assignments in
+`~/.calendar/preferences.json` before rendering. Retain existing assignments;
+the renderer supplies unique deterministic fallback colors when needed.
 Use current run metadata for attachment delivery. If `local-profile.json` exists,
 read its agent-only owner/delivery preferences; otherwise attach without guessing
 an owner to mention.

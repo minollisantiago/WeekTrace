@@ -11,7 +11,8 @@ test('normalized report matches the frozen reference on synthetic evidence', asy
   const root = path.resolve('weeks/.verification')
   await fs.mkdir(root, { recursive: true })
   const evidence = fixture()
-  const report = buildReport({ evidence })
+  // Pin the historical colors so the frozen timing/attribution baseline stays intact.
+  const report = buildReport({ evidence, colors: Object.fromEntries(baselineReport.projects.map(p => [p.directory, p.color])) })
   expect(report).not.toBeInstanceOf(Error)
   if (report instanceof Error) return
   // Branding/date additions and evolved coverage prose are outside baseline parity.
@@ -25,6 +26,45 @@ test('normalized report matches the frozen reference on synthetic evidence', asy
   expect(html).not.toContain('__DATA__')
   await fs.writeFile(path.join(root, 'synthetic.html'), html)
   await fs.writeFile(path.join(root, 'synthetic.json'), JSON.stringify(evidence))
+})
+test('project colors exhaust the picker palette, stay unique, and persist across reordered reports', async () => {
+  const evidence = fixture()
+  evidence.projects = Array.from({ length: 9 }, (_, i) => ({ ...evidence.projects[0]!, directory: `/synthetic/project-${i}`, folder_name: `Project ${i}` }))
+  evidence.sessions = evidence.projects.map((p, i) => ({ ...evidence.sessions[0]!, id: `ses_color_${i}`, project: p.folder_name,
+    directory: p.directory, projectDirectory: p.directory }))
+  const result = buildReport({ evidence })
+  if (result instanceof Error) throw result
+  expect(result.data.projects.slice(0, 5).map(p => p.color)).toEqual(['#F77C9D', '#B1A7F2', '#88C1F2', '#8FD9AF', '#F2BE7E'])
+  expect(new Set(result.data.projects.map(p => p.color.toLowerCase())).size).toBe(9)
+  expect(result.data.sessions.map(s => s.color)).toEqual(result.data.projects.map(p => p.color))
+  const reordered = buildReport({ evidence: { ...evidence, projects: [...evidence.projects].reverse() }, colors: result.colors })
+  if (reordered instanceof Error) throw reordered
+  expect(reordered.colors).toEqual(result.colors)
+  const custom = buildReport({ evidence, colors: { '/synthetic/project-5': '#93E1ED', '/synthetic/project-6': '#93e1ed' } })
+  if (custom instanceof Error) throw custom
+  expect(custom.data.projects[5]!.color).toBe('#93E1ED')
+  expect(new Set(custom.data.projects.map(p => p.color.toLowerCase())).size).toBe(9)
+  const html = await renderHtml(result.data)
+  if (html instanceof Error) throw html
+  await fs.writeFile('weeks/.verification/project-colors.html', html)
+})
+test('inactive projects are hidden while isolated in-range activity stays visible', () => {
+  const evidence = fixture()
+  evidence.sessions = [{ ...evidence.sessions[0]!, events: [evidence.start - 3_600_000] },
+    { ...evidence.sessions.find(s => s.project === 'Research')!, events: [evidence.start + 600_000] }]
+  const result = buildReport({ evidence })
+  if (result instanceof Error) throw result
+  expect(result.data.projects.map(p => p.name)).toEqual(['Research'])
+  expect(result.data.projects[0]!.hours).toBe(0)
+  expect(result.data.projects[0]!.color).toBe('#F77C9D')
+  expect(result.data.sessions).toHaveLength(1)
+  expect(result.data.blocks).toHaveLength(1)
+  expect(result.data.branches.some(b => b.project === 'App')).toBe(false)
+  expect(result.data.inventory.some(p => p.project === '/synthetic/app')).toBe(false)
+  const empty = buildReport({ evidence: { ...evidence, sessions: [] }, colors: result.colors })
+  if (empty instanceof Error) throw empty
+  expect(empty.data.projects).toEqual([])
+  expect(empty.colors).toEqual(result.colors)
 })
 test('DST daily totals use local midnight, not fixed 24-hour slices', () => {
   const week = resolveWeek({ week: '2026-03-02', timezone: 'America/New_York' })

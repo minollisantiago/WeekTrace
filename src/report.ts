@@ -7,10 +7,26 @@ import { dayBoundaries, hours, intervals, localDate, midnight, splitDays, type R
 export interface Block {
   session: string; day: number; start: number; end: number; minute: number; duration: number; lane: number; lanes: number
 }
+export const themeColors = [['Pink', '#F77C9D'], ['Lavender', '#B1A7F2'], ['Blue', '#88C1F2'],
+  ['Green', '#8FD9AF'], ['Peach', '#F2BE7E']] as const
+
+// Extra pastel colors remain deterministic and never wrap back onto the picker palette.
+function nextProjectColor(used: Set<string>) {
+  const available = themeColors.find(([, color]) => !used.has(color.toLowerCase()))
+  if (available) return available[1]
+  for (let index = 0; ; index++) {
+    const hue = (185 + index * 137.508) % 360 / 60
+    const chroma = 0.42, base = 0.57
+    const x = chroma * (1 - Math.abs(hue % 2 - 1))
+    const rgb = hue < 1 ? [chroma, x, 0] : hue < 2 ? [x, chroma, 0] : hue < 3 ? [0, chroma, x]
+      : hue < 4 ? [0, x, chroma] : hue < 5 ? [x, 0, chroma] : [chroma, 0, x]
+    const color = '#' + rgb.map(c => Math.round((c + base) * 255).toString(16).padStart(2, '0')).join('')
+    if (!used.has(color)) return color
+  }
+}
 export function buildReport({ evidence: d, colors = {}, summary = null, theme = 'Pink' }: {
   evidence: Evidence; colors?: Record<string, string>; summary?: Summary | null; theme?: string
 }) {
-  const palette = ['#b9a9f4', '#9edcc6', '#a4ccf5', '#f5cc9a', '#eeb8d0', '#9ed9df']
   const boundaries = dayBoundaries(d)
   const dayCount = boundaries.length - 1
   const period = dayCount === 7 && Temporal.PlainDate.from(d.week).dayOfWeek === 1 ? 'week' : 'range'
@@ -18,17 +34,25 @@ export function buildReport({ evidence: d, colors = {}, summary = null, theme = 
     reason: 'Evidence must cover 1 to 7 whole local calendar days. Recollect with --last-days 7 or a valid --from/--to range.',
   })
   const projectColors = { ...colors }
+  const usedColors = new Set(Object.values(colors).map(color => color.toLowerCase()))
+  const assignedColors = new Set<string>()
   const blocks: Block[] = []
   const allRanges: Range[] = []
   const seen = new Set<string>()
-  const sourceSessions = d.sessions.filter(s => !seen.has(s.id) && Boolean(seen.add(s.id)))
+  const sourceSessions = d.sessions.filter(s => !seen.has(s.id) && Boolean(seen.add(s.id))
+    && intervals({ events: s.events, start: d.start, end: d.end }).some(([start]) => start < d.end))
   const sessions = [] as Array<Omit<Evidence['sessions'][number], 'events' | 'recordedHashes' | 'finals' | 'commitBranches'> & {
     color: string; outcome: string; status: string; commits: Evidence['commits']; possible: Evidence['commits']; estimatedHours: number
   }>
   const uniqueCommits = [...new Map(d.commits.map(c => [JSON.stringify([c.repository, c.hash]), c])).values()]
-  const projects = d.projects.filter(p => p.is_local).map(p => {
-    projectColors[p.directory] ??= palette[Object.keys(projectColors).length % palette.length]!
+  const activeProjects = d.projects.filter(p => p.is_local && sourceSessions.some(session =>
+    belongsTo({ session, directory: p.directory, name: p.folder_name })))
+  const projects = activeProjects.map(p => {
+    const saved = projectColors[p.directory]
+    if (!saved || assignedColors.has(saved.toLowerCase())) projectColors[p.directory] = nextProjectColor(usedColors)
     const color = projectColors[p.directory]!
+    usedColors.add(color.toLowerCase())
+    assignedColors.add(color.toLowerCase())
     const ranges: Range[] = []
     const projectSessions = sourceSessions.filter(session => belongsTo({ session, directory: p.directory, name: p.folder_name }))
     for (const s of projectSessions) {
@@ -84,7 +108,7 @@ export function buildReport({ evidence: d, colors = {}, summary = null, theme = 
   const notes = [...d.gaps]
   const missing = sessions.filter(s => !s.thread).length
   if (missing) notes.push(`${missing} of ${sessions.length} sessions have no original Discord thread ID in available metadata/prompts.`)
-  notes.push(`Only locally retained OpenCode activity in the ${projects.length} selected registered projects is covered; deleted logs, other machines and other agent harnesses are outside this report.`,
+  notes.push(`Only locally retained OpenCode activity in the ${d.projects.filter(p => p.is_local).length} selected registered projects is covered; deleted logs, other machines and other agent harnesses are outside this report.`,
     'Subagent sessions represented by parents are excluded; independent Kimaki review threads remain included. Delegated runtime without parent timestamp events can be undercounted.',
     `Latest response excerpts are self-reported outcomes as of the ${period} cutoff, not an independent shipping audit. Current idle status does not establish task completion. Historical prompts may be missing after compaction.`,
     'Repository/time-only commit matches are possible, not proven. Git commit dates use committer timestamps; unreachable/pruned commits cannot be recovered by --all.')
@@ -97,11 +121,11 @@ export function buildReport({ evidence: d, colors = {}, summary = null, theme = 
   if (factual.followups.some(f => !sessions.some(s => s.id === f.id))) return new CalendarError({
     reason: 'Summary follow-ups reference sessions outside this report. Correct --summary for the selected week/projects.',
   })
-  const branches = branchTotals({ ...d, commits: uniqueCommits })
+  const branches = branchTotals({ projects: activeProjects, sessions: sourceSessions.filter(s => sessions.some(shown => shown.id === s.id)), commits: uniqueCommits })
   const data = { week: d.week, timezone: d.timezone, theme, projects, sessions, blocks, daily,
     hours: hours(allRanges), commits: uniqueCommits.filter(c => c.linked.length).length,
     possibleCommits: uniqueCommits.filter(c => !c.linked.length).length, notes, method: d.method,
-    inventory: d.inventory, summary: { lines: factual.lines.map(s => clean(s, 1800)),
+    inventory: d.inventory.filter(p => activeProjects.some(project => project.directory === p.project)), summary: { lines: factual.lines.map(s => clean(s, 1800)),
       followups: factual.followups.map(f => ({ ...f, text: clean(f.text, 900) })) },
     branches: branches.rows, unattributedBranchCommits: branches.unknown,
     dates: boundaries.slice(0, dayCount).map(ms => ms + (midnight(localDate(ms, d.timezone).add({ days: 1 }).toString(), d.timezone) - ms) / 2) }
