@@ -4,6 +4,19 @@ The shared template embeds WeekTrace's approved handwritten W and favicon; the
 editable mark is `assets/weektrace.svg`. Brand rose stays `#F23568`, independently
 of the report's five selectable theme accents. See `docs/branding.md`.
 
+Token usage appears on tall calendar blocks, hover previews, phone agenda cards,
+inspection dialogs and the sidebar (range and project totals). Event counts use
+message creation timestamps; dialogs also show the session's selected-range total.
+Input/output/cache counts are additive; reasoning is shown separately. Missing
+usage is unavailable or partial, never fabricated zero. Represented subagent calls
+are counted under their parent without inflating hours. Calls outside parent blocks
+remain in session/sidebar totals. Old evidence needs recollection for usage.
+The sidebar puts Activity by day directly below Estimated session activity. Token
+totals use compact numbers without inline partial labels; a collapsed Token usage
+breakdown provides category counts and missing-usage coverage. Tokens by day uses
+the same bar style as activity, with unavailable days marked by a dash rather than
+zero. Delegated-call counts and attribution notes live in their own section.
+
 The Node.js/TypeScript CLI is the sole generation engine. This directory contains
 the approved HTML/CSS template and its design reference. See the root README for
 `report`, `collect`, `render`, configuration, and local tarball setup.

@@ -49,6 +49,24 @@ midnight. Weekly and custom/rolling artifacts use separate date keys.
   zero estimated hours alone does not establish inactivity. Preserve source gaps
   even when a project has no activity to display.
 
+## Token usage
+
+Retain provider-reported input, output, reasoning, cache-read and cache-write counts
+per assistant/compaction message, with message ID, source session, owning parent,
+and creation timestamp. Count only timestamps in the selected half-open range.
+Deduplicate by source-session/message ID. Sum input + output + cache read/write;
+show reasoning separately, never add it again. These are cumulative model-call
+usage counts (including repeated context), not unique text or context-window size.
+Missing usage is unavailable, not zero; label partial recorded totals explicitly.
+Old evidence remains renderable but requires recollection for token usage.
+
+Collect represented subagents for usage only, attribute each to its top retained
+parent, and honor excluded ancestors. Do not add their durations or calendar events.
+Assign calls to event blocks by creation timestamp, including isolated endpoints
+and excluding the next day's midnight. Delegated calls outside parent blocks stay
+in session/project/range and daily usage totals, not arbitrary event blocks. Usage
+without a displayed parent is excluded and disclosed. Source gaps also limit usage.
+
 ## Commits, branches, and outcomes
 
 Confirm session links using a `Session: ses_...` commit trailer or a successful

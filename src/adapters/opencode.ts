@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { CalendarError } from '../errors.ts'
+import { tokensSchema } from '../usage.ts'
 
 const timingSchema = z.object({ created: z.number().optional(), completed: z.number().optional(),
   start: z.number().optional(), end: z.number().optional() })
@@ -8,7 +9,7 @@ export const apiSessionSchema = z.object({ id: z.string(), title: z.string(), di
 export type ApiSession = z.infer<typeof apiSessionSchema>
 export const messagesSchema = z.array(z.object({
   info: z.object({ id: z.string().optional(), role: z.string(), time: timingSchema,
-    modelID: z.string().optional(), model: z.object({ modelID: z.string().optional() }).optional(), finish: z.string().optional() }),
+     tokens: tokensSchema.optional(), modelID: z.string().optional(), model: z.object({ modelID: z.string().optional() }).optional(), finish: z.string().optional() }),
   parts: z.array(z.object({ type: z.string(), time: timingSchema.optional(), text: z.string().optional(),
     synthetic: z.boolean().optional(), tool: z.string().optional(),
     state: z.object({ status: z.string(), time: timingSchema.optional(),

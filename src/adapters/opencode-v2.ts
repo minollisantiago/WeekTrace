@@ -5,6 +5,7 @@ import { CalendarError } from '../errors.ts'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import os from 'node:os'
+import { tokensSchema } from '../usage.ts'
 
 // The CLI owns managed-service discovery and authentication. Never copy service secrets.
 export const localV2 = 'opencode:local'
@@ -22,6 +23,7 @@ const contentSchema = z.object({ type: z.string(), text: z.string().optional(), 
 const messageSchema = z.object({ id: z.string(), type: z.string(),
   time: z.object({ created: z.number(), completed: z.number().optional() }),
   text: z.string().optional(), finish: z.string().optional(),
+  tokens: tokensSchema.optional(),
   model: z.object({ id: z.string() }).optional(), content: z.array(contentSchema).optional(),
   command: z.string().optional(), status: z.string().optional(), exit: z.union([z.number(), z.string()]).optional(),
   output: z.object({ output: z.string(), truncated: z.boolean() }).optional(),
@@ -67,7 +69,7 @@ export function normalizeV2Messages(raw: unknown) {
   const parsed = z.array(messageSchema).safeParse(raw)
   if (!parsed.success) return new CalendarError({ reason: `Unsupported OpenCode V2 message shape at ${parsed.error.issues.map(issue => issue.path.join('.')).join(', ')}. Check /openapi.json.` })
   return messagesSchema.parse(parsed.data.map(m => ({
-    info: { id: m.id, role: m.type === 'synthetic' ? 'user' : m.type, time: m.time, modelID: m.model?.id, finish: m.finish },
+    info: { id: m.id, role: m.type === 'synthetic' ? 'user' : m.type, time: m.time, modelID: m.model?.id, finish: m.finish, tokens: m.tokens },
     parts: m.type === 'user' || m.type === 'synthetic' ? [{ type: 'text', text: m.text,
       synthetic: m.type === 'synthetic' }] : m.type === 'assistant' ? (m.content ?? []).map(p => ({
       type: p.type, text: p.text, tool: p.name,

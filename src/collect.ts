@@ -7,6 +7,28 @@ import { belongsTo, clean, compare } from './evidence.ts'
 import { GAP } from './time.ts'
 import type { Evidence, Project, Session } from './schema.ts'
 import { localV2, v2Inventory, v2Messages } from './adapters/opencode-v2.ts'
+import type { UsageRecord } from './usage.ts'
+
+export function collectUsage(messages: Messages, source: string, session: string, start: number, end: number): UsageRecord[] {
+  return messages.flatMap((m, index) => {
+    const time = m.info.time.created
+    if (!['assistant', 'compaction'].includes(m.info.role) || time === undefined || time < start || time >= end) return []
+    return [{ session, source, id: m.info.id ?? `index:${index}`, time, tokens: m.info.tokens }]
+  })
+}
+
+export function usageOwner(source: ApiSession, inventory: ApiSession[], excluded: Set<string>): string | null {
+  const byId = new Map(inventory.map(s => [s.id, s])), seen = new Set<string>()
+  let current = source
+  for (;;) {
+    if (excluded.has(current.id) || seen.has(current.id) || /weekly work calendar|HTML work calendar/i.test(current.title)) return null
+    seen.add(current.id)
+    if (!current.parentID) return current.title.includes('subagent)') ? null : current.id
+    const parent = byId.get(current.parentID)
+    if (!parent) return current.title.includes('subagent)') ? null : current.id
+    current = parent
+  }
+}
 
 export function normalizeSession({ source, messages, project, meta, start, end }: {
   source: ApiSession; messages: Messages; project: Project; meta?: RecentSession; start: number; end: number
@@ -75,6 +97,7 @@ export async function collect(config: Config) {
   const projects = await registeredProjects(config.projects)
   if (projects instanceof Error) return projects
   const gaps: string[] = [], sessions: Session[] = [], inventory: Evidence['inventory'] = []
+  const usage: UsageRecord[] = []
   const methods = new Set<string>()
   for (const project of projects) {
     if (!project.guild_id) gaps.push(`${project.directory}: Discord guild metadata unavailable; thread IDs are retained, but direct Discord links are unavailable.`)
@@ -102,8 +125,7 @@ export async function collect(config: Config) {
     inventory.push({ project: project.directory, sessions: all.data.length,
       kimakiListed: recent instanceof Error ? 0 : recent.sessions.length, excludedSubagents: all.data.filter(subagent).length })
     const excluded = new Set(config.excludeSessions)
-    const candidates = all.data.filter(s => !subagent(s) && !excluded.has(s.id) && s.time.updated >= config.start - GAP && s.time.created < config.end
-      && !/weekly work calendar|HTML work calendar/i.test(s.title))
+    const candidates = all.data.filter(s => usageOwner(s, all.data, excluded) && s.time.updated >= config.start - GAP && s.time.created < config.end)
     const known = new Map((recent instanceof Error ? [] : recent.sessions).map(s => [s.id, s]))
     // Bound concurrent message requests and preserve inventory order for deterministic colors/lane placement.
     for (let i = 0; i < candidates.length; i += 3) {
@@ -111,7 +133,8 @@ export async function collect(config: Config) {
         const messages = base === localV2 ? await v2Messages(source.id) : await getJson({ base, route: `/session/${encodeURIComponent(source.id)}/message`,
           query: { directory: source.directory }, schema: messagesSchema })
         if (messages instanceof Error) return { gap: `${source.id}: messages unavailable. ${messages.message}` }
-        return { session: normalizeSession({ source, messages: messages.data, project, meta: known.get(source.id), start: config.start, end: config.end }),
+        usage.push(...collectUsage(messages.data, source.id, usageOwner(source, all.data, excluded)!, config.start, config.end))
+        return { session: subagent(source) ? null : normalizeSession({ source, messages: messages.data, project, meta: known.get(source.id), start: config.start, end: config.end }),
           gap: messages.truncated ? `${source.id}: message response truncated; timing coverage incomplete.` : null }
       }))
       for (const result of batch) {
@@ -145,7 +168,7 @@ export async function collect(config: Config) {
     previous.possible = [...new Set([...previous.possible, ...commit.possible])]
   }
   const evidence: Evidence = { schemaVersion: 1, week: config.week, timezone: config.timezone, start: config.start, end: config.end,
-    projects, sessions, commits: [...deduplicated.values()], gaps: [...new Set(gaps)], inventory,
+    projects, sessions, usage: [...new Map(usage.map(r => [JSON.stringify([r.source, r.id]), r])).values()].sort((a, b) => a.time - b.time || compare(a.source, b.source) || compare(a.id, b.id)), commits: [...deduplicated.values()], gaps: [...new Set(gaps)], inventory,
     method: `${[...methods].join(' ')} Actual message/tool timestamps; Kimaki recent metadata supplemented by prompt thread IDs. Git --all includes worktree refs. No session creation/update lifespans used.` }
   return evidence
 }

@@ -3,9 +3,11 @@ import { belongsTo, branchTotals, clean } from './evidence.ts'
 import { CalendarError } from './errors.ts'
 import type { Evidence, Summary } from './schema.ts'
 import { dayBoundaries, hours, intervals, localDate, midnight, splitDays, type Range } from './time.ts'
+import { summarizeUsage, type Usage } from './usage.ts'
 
 export interface Block {
   session: string; day: number; start: number; end: number; minute: number; duration: number; lane: number; lanes: number
+  usage?: Usage
 }
 export const themeColors = [['Pink', '#F77C9D'], ['Lavender', '#B1A7F2'], ['Blue', '#88C1F2'],
   ['Green', '#8FD9AF'], ['Peach', '#F2BE7E']] as const
@@ -42,7 +44,7 @@ export function buildReport({ evidence: d, colors = {}, summary = null, theme = 
   const sourceSessions = d.sessions.filter(s => !seen.has(s.id) && Boolean(seen.add(s.id))
     && intervals({ events: s.events, start: d.start, end: d.end }).some(([start]) => start < d.end))
   const sessions = [] as Array<Omit<Evidence['sessions'][number], 'events' | 'recordedHashes' | 'finals' | 'commitBranches'> & {
-    color: string; outcome: string; status: string; commits: Evidence['commits']; possible: Evidence['commits']; estimatedHours: number
+    color: string; outcome: string; status: string; commits: Evidence['commits']; possible: Evidence['commits']; estimatedHours: number; usage?: Usage
   }>
   const uniqueCommits = [...new Map(d.commits.map(c => [JSON.stringify([c.repository, c.hash]), c])).values()]
   const activeProjects = d.projects.filter(p => p.is_local && sourceSessions.some(session =>
@@ -65,7 +67,9 @@ export function buildReport({ evidence: d, colors = {}, summary = null, theme = 
         : s.statusNow === 'busy' ? 'Active now · no linked commits'
           : !s.finals.length ? 'No final recorded · no linked commits' : 'No linked commits'
       const { events: _events, recordedHashes: _hashes, finals: _finals, commitBranches: _branches, ...entry } = s
+      const usage = d.usage?.filter(r => r.session === s.id && r.time >= d.start && r.time < d.end)
       sessions.push({ ...entry, title: clean(entry.title, 900), prompt: clean(entry.prompt, 900), color,
+        ...(usage ? { usage: summarizeUsage(usage) } : {}),
         outcome: clean(outcome, 1800), status, commits: linked, possible, estimatedHours: hours(rs) })
       for (const range of rs) {
         for (const [x, y] of splitDays({ range, timezone: d.timezone })) {
@@ -75,6 +79,7 @@ export function buildReport({ evidence: d, colors = {}, summary = null, theme = 
           // Use wall-clock position on the 24-hour grid; elapsed duration remains actual time.
           const zoned = Temporal.Instant.fromEpochMilliseconds(Math.trunc(x)).toZonedDateTimeISO(d.timezone)
           blocks.push({ session: s.id, day, start: x, end: y,
+            ...(usage ? { usage: summarizeUsage(usage.filter(r => r.time >= x && r.time < boundaries[day + 1]! && (r.time < y || r.time === y && y === range[1]))) } : {}),
             minute: zoned.hour * 60 + zoned.minute + zoned.second / 60 + zoned.millisecond / 60_000,
             duration: (y - x) / 60_000, lane: 0, lanes: 1 })
         }
@@ -82,6 +87,7 @@ export function buildReport({ evidence: d, colors = {}, summary = null, theme = 
     }
     allRanges.push(...ranges)
     return { name: p.folder_name, directory: p.directory, color, hours: hours(ranges),
+      ...(d.usage ? { usage: summarizeUsage(d.usage.filter(r => projectSessions.some(s => s.id === r.session) && r.time >= d.start && r.time < d.end)) } : {}),
       gitAvailable: p.gitAvailable ?? false, sessions: projectSessions.length }
   })
   for (let day = 0; day < dayCount; day++) {
@@ -106,6 +112,10 @@ export function buildReport({ evidence: d, colors = {}, summary = null, theme = 
   const daily = Array.from({ length: dayCount }, (_, i) => hours(allRanges.map(([a, b]) =>
     [Math.max(a, boundaries[i]!), Math.min(b, boundaries[i + 1]!)])))
   const notes = [...d.gaps]
+  if (d.usage) {
+    const unrepresented = d.usage.filter(r => !sessions.some(s => s.id === r.session))
+    if (unrepresented.length) notes.push(`${unrepresented.length} usage records have no displayed parent activity; excluded from displayed token totals.`)
+  }
   const missing = sessions.filter(s => !s.thread).length
   if (missing) notes.push(`${missing} of ${sessions.length} sessions have no original Discord thread ID in available metadata/prompts.`)
   notes.push(`Only locally retained OpenCode activity in the ${d.projects.filter(p => p.is_local).length} selected registered projects is covered; deleted logs, other machines and other agent harnesses are outside this report.`,
@@ -123,6 +133,8 @@ export function buildReport({ evidence: d, colors = {}, summary = null, theme = 
   })
   const branches = branchTotals({ projects: activeProjects, sessions: sourceSessions.filter(s => sessions.some(shown => shown.id === s.id)), commits: uniqueCommits })
   const data = { week: d.week, timezone: d.timezone, theme, projects, sessions, blocks, daily,
+    ...(d.usage ? { usage: summarizeUsage(d.usage.filter(r => sessions.some(s => s.id === r.session) && r.time >= d.start && r.time < d.end)),
+      dailyUsage: boundaries.slice(0, dayCount).map((start, i) => summarizeUsage(d.usage!.filter(r => sessions.some(s => s.id === r.session) && r.time >= start && r.time < boundaries[i + 1]!))) } : {}),
     hours: hours(allRanges), commits: uniqueCommits.filter(c => c.linked.length).length,
     possibleCommits: uniqueCommits.filter(c => !c.linked.length).length, notes, method: d.method,
     inventory: d.inventory.filter(p => activeProjects.some(project => project.directory === p.project)), summary: { lines: factual.lines.map(s => clean(s, 1800)),

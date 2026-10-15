@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { usageRecordSchema } from './usage.ts'
 
 export const projectSchema = z.object({
   directory: z.string(), folder_name: z.string(), is_local: z.boolean(),
@@ -21,6 +22,7 @@ export const commitSchema = z.object({
 })
 export const evidenceSchema = z.object({
   schemaVersion: z.literal(1).optional(), week: z.string(), timezone: z.string(),
+  usage: z.array(usageRecordSchema).optional(),
   start: z.number().finite(), end: z.number().finite(), projects: z.array(projectSchema),
   sessions: z.array(sessionSchema), commits: z.array(commitSchema), gaps: z.array(z.string()),
   inventory: z.array(z.object({ project: z.string(), sessions: z.number(),
