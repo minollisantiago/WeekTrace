@@ -6,6 +6,7 @@ import type { Config } from './config.ts'
 import { belongsTo, clean, compare } from './evidence.ts'
 import { GAP } from './time.ts'
 import type { Evidence, Project, Session } from './schema.ts'
+import { localV2, v2Inventory, v2Messages } from './adapters/opencode-v2.ts'
 
 export function normalizeSession({ source, messages, project, meta, start, end }: {
   source: ApiSession; messages: Messages; project: Project; meta?: RecentSession; start: number; end: number
@@ -26,7 +27,7 @@ export function normalizeSession({ source, messages, project, meta, start, end }
         const state = part.state
         times.push(state?.time?.start, state?.time?.end)
         const inWeek = start <= (state?.time?.start ?? created) && (state?.time?.start ?? created) < end
-        if (state?.status === 'completed' && ['bash', 'functions.bash'].includes(part.tool ?? '') && inWeek) {
+        if (state?.status === 'completed' && ['bash', 'functions.bash', 'shell', 'functions.shell'].includes(part.tool ?? '') && inWeek) {
           const cmd = state.input?.command ?? '', output = state.output ?? ''
           if (/\bgit\s+(?:-C\s+\S+\s+)?commit\b/.test(cmd)) {
             for (const match of output.matchAll(/^\[([^\]\n]+?) ([0-9a-f]{7,40})\]/gm)) {
@@ -74,21 +75,26 @@ export async function collect(config: Config) {
   const projects = await registeredProjects(config.projects)
   if (projects instanceof Error) return projects
   const gaps: string[] = [], sessions: Session[] = [], inventory: Evidence['inventory'] = []
+  const methods = new Set<string>()
   for (const project of projects) {
+    if (!project.guild_id) gaps.push(`${project.directory}: Discord guild metadata unavailable; thread IDs are retained, but direct Discord links are unavailable.`)
     const recent = await recentSessions(project.directory)
     if (recent instanceof Error) { console.warn(recent.message); gaps.push(`${project.directory}: Kimaki recent metadata unavailable.`) }
-    const base = config.api ?? (recent instanceof Error ? null : recent.api)
+    const base = config.api ?? (recent instanceof Error ? null : recent.api) ?? localV2
     if (!base) {
       gaps.push(`${project.directory}: server discovery failed. Run kimaki session list --project PATH --json or pass --api http://127.0.0.1:PORT.`)
       continue
     }
-    const documented = await documentedApi(base)
+    const documented = base === localV2 ? await v2Inventory(project.directory) : await documentedApi(base)
     if (documented instanceof Error) { console.warn(documented.message); gaps.push(`${project.directory}: ${documented.message}`); continue }
     const query: Record<string, string | number> = { directory: project.directory, limit: documented.limit }
     if (documented.scope) query.scope = 'project'
     else gaps.push(`${project.directory}: project-scoped worktree session inventory is unavailable on this server; worktree coverage may be incomplete.`)
-    const all = await getJson({ base, route: '/session', query, schema: z.array(apiSessionSchema) })
+    const all = 'sessions' in documented ? { data: z.array(apiSessionSchema).parse(documented.sessions), truncated: false } : await getJson({ base, route: '/session', query, schema: z.array(apiSessionSchema) })
     if (all instanceof Error) { console.warn(all.message); gaps.push(`${project.directory}: ${all.message}`); continue }
+    methods.add(base === localV2
+      ? 'Documented OpenCode V2 /openapi.json, /api/session and /api/session/{id}/message via the authenticated local opencode api CLI; cursor pages exhausted, including project worktrees.'
+      : 'Documented local OpenCode GET /session and /session/{id}/message.')
     if (all.data.length >= documented.limit || all.truncated) gaps.push(`${project.directory}: session inventory limit reached; coverage incomplete.`)
     if (!documented.allMessages) gaps.push(`${project.directory}: server does not document unlimited message retrieval; timing coverage may be incomplete.`)
     const ids = new Set(all.data.map(s => s.id))
@@ -102,7 +108,7 @@ export async function collect(config: Config) {
     // Bound concurrent message requests and preserve inventory order for deterministic colors/lane placement.
     for (let i = 0; i < candidates.length; i += 3) {
       const batch = await Promise.all(candidates.slice(i, i + 3).map(async source => {
-        const messages = await getJson({ base, route: `/session/${encodeURIComponent(source.id)}/message`,
+        const messages = base === localV2 ? await v2Messages(source.id) : await getJson({ base, route: `/session/${encodeURIComponent(source.id)}/message`,
           query: { directory: source.directory }, schema: messagesSchema })
         if (messages instanceof Error) return { gap: `${source.id}: messages unavailable. ${messages.message}` }
         return { session: normalizeSession({ source, messages: messages.data, project, meta: known.get(source.id), start: config.start, end: config.end }),
@@ -140,6 +146,6 @@ export async function collect(config: Config) {
   }
   const evidence: Evidence = { schemaVersion: 1, week: config.week, timezone: config.timezone, start: config.start, end: config.end,
     projects, sessions, commits: [...deduplicated.values()], gaps: [...new Set(gaps)], inventory,
-    method: 'Documented local OpenCode GET /session and /session/{id}/message; actual message created/completed and text/tool start/end timestamps. Kimaki recent metadata supplemented by prompt thread IDs. Git --all includes worktree refs. No session creation/update lifespans used.' }
+    method: `${[...methods].join(' ')} Actual message/tool timestamps; Kimaki recent metadata supplemented by prompt thread IDs. Git --all includes worktree refs. No session creation/update lifespans used.` }
   return evidence
 }

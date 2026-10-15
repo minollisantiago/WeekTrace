@@ -4,11 +4,15 @@ import { command } from './process.ts'
 import { boundary, CalendarError } from '../errors.ts'
 import { projectSchema, type Project } from '../schema.ts'
 
-const registrationSchema = z.array(z.object({
+export const registrationSchema = z.array(z.union([z.object({
   directory: z.string().nullable(), folder_name: z.string().optional(),
   channel_name: z.string().optional(), is_local: z.boolean(), guild_id: z.string().optional(),
-}))
-const recentSchema = z.array(z.object({ id: z.string(), threadId: z.string().nullable().optional(), status: z.string().optional() }))
+}), z.object({ directory: z.string(), channelId: z.string(), guildId: z.string().nullable() }).transform(p => ({
+  directory: p.directory, is_local: true, folder_name: path.basename(p.directory), channel_name: undefined, guild_id: p.guildId ?? undefined,
+}))]))
+const recentSchema = z.array(z.object({ id: z.string(), threadId: z.string().nullable().optional(), status: z.string().optional(),
+  metadata: z.object({ kimaki: z.object({ threadId: z.string().optional() }).optional() }).optional(),
+}).transform(p => ({ ...p, threadId: p.threadId ?? p.metadata?.kimaki?.threadId })))
 export type RecentSession = z.infer<typeof recentSchema>[number]
 export function parseJsonOutput<T>({ output, schema }: { output: string; schema: z.ZodType<T> }) {
   const json = boundary(() => JSON.parse(output) as object, 'Kimaki returned invalid JSON. Update/check Kimaki and rerun project list --json.')

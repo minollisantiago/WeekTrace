@@ -14,7 +14,9 @@ const tmp = await fs.mkdtemp(path.join(parent, 'package-'))
 await fs.writeFile(path.join(tmp, 'package.json'), JSON.stringify({ name: 'calendar-package-consumer', private: true, type: 'module' }))
 const originalManifest = await fs.readFile(path.join(root, 'package.json'), 'utf8')
 const packed = await execFile('npm', ['pack', '--json', '--pack-destination', tmp], { cwd: root })
-const info = JSON.parse(packed.stdout)[0]
+const packedInfo = JSON.parse(packed.stdout)
+const info = Array.isArray(packedInfo) ? packedInfo[0] : packedInfo[JSON.parse(originalManifest).name]
+if (!info?.filename || !Array.isArray(info.files)) throw new Error('Unsupported npm pack JSON response')
 const files = info.files.map(f => f.path)
 const forbidden = files.filter(f => /^(evidence\/|weeks\/|preferences\.json$|local-profile\.json$|config\.json$|\.env)/.test(f))
 if (forbidden.length) throw new Error(`Runtime files in tarball: ${forbidden.join(', ')}`)

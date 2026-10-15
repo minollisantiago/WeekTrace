@@ -46,8 +46,12 @@
    rendering cross local midnight, use the returned inclusive `from`/`to` dates
    as explicit flags for rendering. The reporting timezone determines today's date.
    Apply the same timezone, project, data-directory, and exclusion options to
-   subsequent commands. No fixed OpenCode port is assumed; pass `--api` only
-   when discovery is unavailable or an explicit server is requested.
+    subsequent commands. No fixed OpenCode port is assumed. With current Kimaki,
+    the installed `opencode api` CLI discovers/authenticates to the local V2 service;
+    the adapter verifies `/openapi.json` and exhausts session/message cursor pages.
+    Older discovered servers and explicit `--api` URLs use the legacy `/doc` adapter.
+    Missing Discord guild metadata is disclosed separately from activity coverage;
+    thread IDs remain retained, but links are omitted when the guild is unknown.
 4. Inspect sanitized evidence and actual final response excerpts. Check source gaps,
    represented subagents, commit links, and timing coverage. Missing Git evidence,
    missing finals, current idle status, and commit absence are distinct facts.

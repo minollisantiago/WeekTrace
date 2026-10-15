@@ -37,8 +37,11 @@ use the absolute executable path, for example
 `node /home/your-user/.calendar/dist/cli.js report --previous-week`.
 
 Automatic discovery runs `kimaki project list --json` and per-project
-`kimaki session list --project PATH --json`, then verifies the discovered server's
-`/doc`. If discovery cannot locate a server, supply `--api http://127.0.0.1:PORT`.
+`kimaki session list --project PATH --json`. Current Kimaki uses OpenCode V2:
+WeekTrace invokes `opencode api` for authenticated local service discovery, verifies
+`/openapi.json`, and follows every session/message cursor page. Install the OpenCode
+CLI alongside Kimaki. Older server discovery and explicit `--api` URLs retain the
+legacy `/doc` adapter.
 Unavailable APIs, retained-history limits, and unavailable Git remain coverage gaps.
 
 The week is Monday 00:00 inclusive to next Monday 00:00 exclusive in the reporting

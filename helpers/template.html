@@ -86,7 +86,7 @@ const grid=document.getElementById('grid'),axis=el('div',undefined,'axis');for(l
 let opener=null;
 function openSession(s,b,source){opener=source;const body=document.getElementById('detailbody');body.replaceChildren();const title=el('h2',s.title);title.id='detailtitle';body.append(title,el('p',`${s.project} · ${s.status}`));if(b)body.append(el('p',`${stamp.format(b.start)} → ${stamp.format(b.end)}${b.start===b.end?' · isolated event, duration unknown':''}`,'meta'));
 body.append(el('p',`Models: ${s.models.join(', ')||'unavailable'} · ${hm(s.estimatedHours)} estimated session activity in selected range`,'meta'),el('p',s.directory+' · '+s.id,'files'));
-if(s.thread){const a=el('a','Open original Discord thread');a.href=`https://discord.com/channels/${s.guild}/${s.thread}`;a.target='_blank';a.rel='noopener';body.append(a)}else body.append(el('p','Original Discord thread link unavailable.','meta'));
+if(s.thread&&s.guild){const a=el('a','Open original Discord thread');a.href=`https://discord.com/channels/${s.guild}/${s.thread}`;a.target='_blank';a.rel='noopener';body.append(a)}else body.append(el('p','Original Discord thread link unavailable.','meta'));
 body.append(el('h3','First actual user prompt · excerpt'),el('div',s.prompt,'excerpt'),el('h3','Last recorded outcome in selected range · response excerpt'),el('div',s.outcome,'excerpt'),el('h3',`${s.commits.length} confirmed session-linked commits`));
 if(!s.commits.length)body.append(el('p',s.status+'; this is not a failure classification.','meta'));
 for(const c of s.commits){const div=el('div',`${c.hash.slice(0,8)} · ${c.subject}`,'commit');div.append(el('p',c.linked.find(l=>l.id===s.id)?.basis||'confirmed link','meta'),el('div',c.files.join('\n'),'files'));body.append(div)}

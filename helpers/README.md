@@ -34,7 +34,9 @@ Today includes only activity collected so far. Use returned `from`/`to` dates as
 explicit flags to render a rolling collection after local midnight. Oversized,
 reversed, incomplete, or conflicting date selections are rejected.
 
-Collection discovers OpenCode servers through Kimaki and verifies their `/doc`:
+Collection uses authenticated local `opencode api` requests with current Kimaki,
+verifies V2 `/openapi.json`, and follows every session/message cursor, including
+project worktrees. Older discovered servers and explicit `--api` URLs verify `/doc`:
 `/session` uses a large documented limit
 and project scope where available, and session messages are requested without a
 limit. Inventory limits, unavailable worktree scope, and uncertain completeness
