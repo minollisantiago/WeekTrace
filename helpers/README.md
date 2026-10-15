@@ -119,10 +119,13 @@ The header, toolbar and content share a centered 1900px maximum width and gutter
 keeping the appearance controls aligned with the summary at wide sizes.
 Calendar and summary stack vertically at 1032px and below; the calendar grid remains
 available above the 760px phone breakpoint, where the agenda becomes the default.
-Above the 760px phone breakpoint, the layout fits the viewport; the calendar/agenda
-and summary scroll internally with hidden scrollbar chrome. On phones, the agenda
-and summary expand in normal document flow, so swiping anywhere scrolls the page
-without competing nested panes. Session dialogs retain their own bounded scroll.
+Above 1032px, the layout fits the viewport; the calendar/agenda and summary scroll
+internally with hidden scrollbar chrome. At 1032px and below, all stacked content
+expands in normal document flow, so scrolling anywhere moves the page without
+competing nested panes. Tablets retain the full calendar grid and agenda toggle;
+phones default to the agenda. Session dialogs retain their own bounded scroll.
+The calendar grid has 32px of bottom padding so late-night events have breathing
+room at the panel edge, including minimum-height blocks extending past midnight.
 The summary scrolls within a top/bottom padded frame, with daily activity directly
 below estimated activity, followed by branches, no-linked-commit sessions and
 the activity report. Branch rows match the project-total font size and bold counts.
