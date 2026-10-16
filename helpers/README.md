@@ -1,7 +1,7 @@
 # WeekTrace report helpers
 
-The shared template embeds WeekTrace's approved handwritten W and favicon; the
-editable mark is `assets/weektrace.svg`. Brand rose stays `#F23568`, independently
+The shared template embeds WeekTrace's approved handwritten W as its favicon, without
+a branding banner above the calendar; the editable mark is `assets/weektrace.svg`. Brand rose stays `#F23568`, independently
 of the report's five selectable theme accents. See `docs/branding.md`.
 
 Token usage appears on tall calendar blocks, hover previews, phone agenda cards,
@@ -92,7 +92,7 @@ dialog directly. Striped grid fills distinguish sessions without confirmed linke
 commits; all calendar and agenda event cards are borderless.
 The segmented accent picker and sun/moon appearance toggle sit in the header's
 top-right corner, aligned to the summary card's right edge. On narrow phones they
-wrap below the brand, retaining that right alignment.
+wrap below the activity heading and totals, retaining that right alignment.
 It offers a lighter Pink `#F77C9D` (default), Lavender
 `#B1A7F2`, Blue `#88C1F2`, Green `#8FD9AF`, and Peach `#F2BE7E`. It updates
 activity bars, active controls, links, and the inspection border.
