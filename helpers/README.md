@@ -70,6 +70,19 @@ output hash. Referencing a commit in `git log` does not establish attribution.
 Repository/time-only matches are labeled possible. Changed files come from the
 commit's tree diff, never current uncommitted changes. Git `--all` includes local
 worktree refs; pruned/unreachable history cannot be recovered.
+The summary's Repository commits matrix shows one row per active project and one
+green square per selected local date. Its shared intensity scale counts all retained
+repository commits (including unlinked commits), deduplicated by repository/hash.
+Hover, keyboard focus, or tap reveals commit/file counts and textual lines added
+and deleted; missing Git/statistics and binary changes remain explicit. Line counts
+come from committed tree numstats (merge commits compare to their first parent),
+never uncommitted changes or inferred code size. Binary files do not add line counts.
+Session previews and dialogs show confirmed-commit line totals and original Discord
+links. Critique URLs are retained from in-range assistant text or successful shell
+output before excerpt truncation, deduplicated, and labeled session-level previews,
+not verified commit diffs. External links are optional to open; the report remains
+offline. Critique previews may expire after seven days. Older evidence needs
+recollection to populate line statistics and preview links.
 
 Timestamps group after gaps greater than 30 minutes. Intervals are clipped at the
 selected range boundaries, split at local midnight, and unioned within projects and overall.

@@ -69,5 +69,31 @@ test('Git collection uses commit tree diffs and deduplicable common worktree ide
   if (result instanceof Error) return
   expect(result.repository).toBe(repo)
   expect(result.commits[0]?.files).toEqual(['feature.txt'])
+  expect(result.commits[0]?.stats).toEqual({ added: 1, deleted: 0, binary: 0 })
   expect(result.commits[0]?.linked).toEqual([{ id: 'ses_one', basis: 'Session trailer' }])
+  await fs.writeFile(path.join(repo, 'feature.txt'), 'replacement\nsecond\n')
+  await fs.writeFile(path.join(repo, 'tab\tname.txt'), 'one\ntwo\n')
+  await fs.writeFile(path.join(repo, 'binary.bin'), Buffer.from([0, 1, 2, 0]))
+  await exec('git', ['-C', repo, 'add', 'feature.txt', 'tab\tname.txt', 'binary.bin'])
+  await exec('git', ['-C', repo, '-c', 'user.name=Synthetic', '-c', 'user.email=synthetic@example.invalid', '-c', 'commit.gpgsign=false',
+    'commit', '-m', 'Stats'], { env: { ...process.env, GIT_AUTHOR_DATE: '2026-10-05T13:00:00Z', GIT_COMMITTER_DATE: '2026-10-05T13:00:00Z' } })
+  const changed = await collectGit({ project: { ...evidence.projects[0]!, directory: repo }, sessions: [], start: evidence.start, end: evidence.end })
+  if (changed instanceof Error) throw changed
+  expect(changed.commits.find(c => c.subject === 'Stats')?.stats).toEqual({ added: 4, deleted: 1, binary: 1 })
+})
+test('Critique evidence retains only in-range assistant previews and successful shell output, without inferring commit links', () => {
+  const evidence = fixture(), start = evidence.start, url = 'https://critique.work/v/synthetic-diff'
+  const result = normalizeSession({ source: { id: 'ses_diff', title: 'Diff', directory: '/synthetic/app', time: { created: start, updated: start } },
+    project: evidence.projects[0]!, start, end: evidence.end, messages: [
+      { info: { role: 'user', time: { created: start } }, parts: [{ type: 'text', text: 'https://critique.work/v/user-link' }] },
+      { info: { role: 'assistant', time: { created: start - 1 } }, parts: [{ type: 'text', text: 'https://critique.work/v/old' }] },
+      { info: { role: 'assistant', time: { created: start } }, parts: [
+        { type: 'text', text: `[diff](${url}) https://critique.work.evil/v/wrong https://critique.work/v/path/annotations` },
+        { type: 'tool', tool: 'shell', state: { status: 'completed', input: { command: 'bunx critique --web Test' }, output: url } },
+        { type: 'tool', tool: 'shell', state: { status: 'error', output: 'https://critique.work/v/failed' } },
+      ] },
+      { info: { role: 'assistant', time: { created: evidence.end } }, parts: [{ type: 'text', text: 'https://critique.work/v/future' }] },
+    ] })
+  expect(result?.critiqueLinks).toEqual([{ url, time: start }])
+  expect(result?.recordedHashes).toEqual([])
 })

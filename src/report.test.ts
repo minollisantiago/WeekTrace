@@ -16,7 +16,7 @@ test('normalized report matches the frozen reference on synthetic evidence', asy
   expect(report).not.toBeInstanceOf(Error)
   if (report instanceof Error) return
   // Branding/date additions and evolved coverage prose are outside baseline parity.
-  const { theme: _theme, dates: _dates, notes: _notes, ...actual } = report.data
+   const { theme: _theme, dates: _dates, notes: _notes, repositoryActivity: _repositoryActivity, ...actual } = report.data
   expect(actual).toEqual(baselineReport)
   const html = await renderHtml(report.data)
   expect(html).not.toBeInstanceOf(Error)
@@ -80,6 +80,25 @@ test('DST daily totals use local midnight, not fixed 24-hour slices', () => {
   if (result instanceof Error) throw result
   expect(result.data.daily).toEqual([0, 0, 0, 0, 0, 0, 23])
   expect(result.data.hours).toBe(23)
+})
+test('repository days count all unique repository commits at local boundaries and preserve missing statistics', () => {
+  const evidence = fixture(), first = evidence.commits[0]!
+  evidence.projects[0]!.repository = first.repository
+  evidence.commits = [
+    { ...first, time: evidence.start, stats: { added: 12, deleted: 3, binary: 1 } },
+    { ...first, time: evidence.start, stats: { added: 12, deleted: 3, binary: 1 } },
+    { ...first, hash: 'unlinked', time: evidence.start + 1000, linked: [] },
+    { ...first, hash: 'next', time: midnight('2026-10-06', evidence.timezone), linked: [] },
+    { ...first, hash: 'outside', time: evidence.end },
+  ]
+  const report = buildReport({ evidence })
+  if (report instanceof Error) throw report
+  const days = report.data.repositoryActivity[0]!.days
+  expect(days).toHaveLength(7)
+  expect(days[0]).toMatchObject({ commits: 2, added: 12, deleted: 3, binary: 1, missingStats: 1 })
+  expect(days[1]!.commits).toBe(1)
+  expect(days[6]!.commits).toBe(0)
+  expect(report.data.repositoryActivity.find(p => p.directory === '/synthetic/research')?.days[0]?.available).toBe(false)
 })
 test('isolated/overlapping events affect visuals but never inflate activity', () => {
   const result = buildReport({ evidence: fixture() })

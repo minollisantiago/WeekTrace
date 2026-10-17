@@ -14,11 +14,13 @@ export const sessionSchema = z.object({
   recordedHashes: z.array(z.string()), statusNow: z.string(),
   parent: z.string().nullable().optional(), branchHints: z.array(z.string()).default([]),
   commitBranches: z.array(z.object({ branch: z.string(), hash: z.string() })).default([]),
+  critiqueLinks: z.array(z.object({ url: z.string().regex(/^https:\/\/critique\.work\/v\/[A-Za-z0-9_-]+$/), time: z.number().finite() })).optional(),
 })
 export const commitSchema = z.object({
   repository: z.string(), hash: z.string(), time: z.number(), subject: z.string(),
   files: z.array(z.string()), linked: z.array(z.object({ id: z.string(), basis: z.string() })),
   possible: z.array(z.string()),
+  stats: z.object({ added: z.number().int().nonnegative(), deleted: z.number().int().nonnegative(), binary: z.number().int().nonnegative() }).optional(),
 })
 export const evidenceSchema = z.object({
   schemaVersion: z.literal(1).optional(), week: z.string(), timezone: z.string(),

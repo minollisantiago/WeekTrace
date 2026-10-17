@@ -47,12 +47,25 @@ export async function collectGit({ project, sessions, start, end }: {
       } else if (s.events.length && s.events.reduce((a, b) => Math.min(a, b), Infinity) <= time
         && time <= s.events.reduce((a, b) => Math.max(a, b), -Infinity)) possible.push(s.id)
     }
-    const files = await git(directory, ['diff-tree', '--root', '--no-commit-id', '--name-only', '-r', hash!])
+    const files = await git(directory, ['diff-tree', '--root', '--diff-merges=first-parent', '--no-commit-id', '--name-only', '-r', hash!])
     if (files instanceof Error) {
       console.warn(files.message)
       gaps.push(`${directory}: files unavailable for ${hash}`)
     }
+    // NUL-delimited numstat keeps unusual filenames from being mistaken for rows.
+    const diff = await git(directory, ['diff-tree', '--root', '--diff-merges=first-parent', '--no-commit-id', '--numstat', '-z', '-r', '--no-renames', hash!])
+    let stats: Commit['stats']
+    if (diff instanceof Error) gaps.push(`${directory}: line statistics unavailable for ${hash}`)
+    else {
+      stats = { added: 0, deleted: 0, binary: 0 }
+      for (const row of diff.stdout.split('\0').filter(Boolean)) {
+        const [added, deleted] = row.split('\t')
+        if (added === '-' || deleted === '-') stats.binary++
+        else { stats.added += Number(added); stats.deleted += Number(deleted) }
+      }
+    }
     commits.push({ repository, hash: hash!, time, subject: clean(subject!),
+      ...(stats ? { stats } : {}),
       files: files instanceof Error ? [] : files.stdout.trim().split('\n').filter(s => s.length > 0), linked, possible })
   }
   for (const s of sessions) {

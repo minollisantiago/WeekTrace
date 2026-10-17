@@ -39,6 +39,14 @@ export function normalizeSession({ source, messages, project, meta, start, end }
   const models = new Set<string>(), hashes = new Set<string>(), branches = new Set<string>()
   const commitBranches = new Map<string, { branch: string; hash: string }>()
   const threads: string[] = []
+  const critiqueLinks = new Map<string, { url: string; time: number }>()
+  const retainLinks = (text: string, time: number) => {
+    if (time < start || time >= end) return
+    for (const match of text.matchAll(/https:\/\/critique\.work\/v\/[A-Za-z0-9_-]+(?![A-Za-z0-9_/-])/g)) {
+      const url = match[0]
+      if (!critiqueLinks.has(url)) critiqueLinks.set(url, { url, time })
+    }
+  }
   for (const message of messages) {
     const info = message.info, time = info.time, created = time.created ?? 0
     const times = [time.created, time.completed]
@@ -51,6 +59,7 @@ export function normalizeSession({ source, messages, project, meta, start, end }
         const inWeek = start <= (state?.time?.start ?? created) && (state?.time?.start ?? created) < end
         if (state?.status === 'completed' && ['bash', 'functions.bash', 'shell', 'functions.shell'].includes(part.tool ?? '') && inWeek) {
           const cmd = state.input?.command ?? '', output = state.output ?? ''
+          retainLinks(output, state.time?.end ?? state.time?.start ?? created)
           if (/\bgit\s+(?:-C\s+\S+\s+)?commit\b/.test(cmd)) {
             for (const match of output.matchAll(/^\[([^\]\n]+?) ([0-9a-f]{7,40})\]/gm)) {
               const branch = match[1]!.replace(/ \(root-commit\)$/, ''), hash = match[2]!
@@ -67,6 +76,7 @@ export function normalizeSession({ source, messages, project, meta, start, end }
       }
       if (part.type !== 'text') continue
       const raw = part.text ?? ''
+      if (info.role === 'assistant' && !part.synthetic) retainLinks(raw, created)
       const thread = raw.match(/thread-id="(\d+)"/)?.[1]
       if (thread) threads.push(thread)
       if (info.role === 'user' && start <= created && created < end) {
@@ -90,6 +100,7 @@ export function normalizeSession({ source, messages, project, meta, start, end }
     models: [...models].sort(compare), prompt: prompts.sort((a, b) => a[0] - b[0] || compare(a[1], b[1]))[0]?.[1] ?? 'First user prompt unavailable.',
     events: retained, finals: finals.sort((a, b) => a[0] - b[0] || compare(a[1], b[1])).map(x => x[1]), recordedHashes: [...hashes].sort(compare),
     statusNow: meta?.status ?? 'unknown', parent: source.parentID ?? null, branchHints: [...branches].sort(compare),
+    ...(critiqueLinks.size ? { critiqueLinks: [...critiqueLinks.values()] } : {}),
     commitBranches: [...commitBranches.values()].sort((a, b) => compare(a.branch, b.branch) || compare(a.hash, b.hash)) }
 }
 

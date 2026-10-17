@@ -132,7 +132,17 @@ export function buildReport({ evidence: d, colors = {}, summary = null, theme = 
     reason: 'Summary follow-ups reference sessions outside this report. Correct --summary for the selected week/projects.',
   })
   const branches = branchTotals({ projects: activeProjects, sessions: sourceSessions.filter(s => sessions.some(shown => shown.id === s.id)), commits: uniqueCommits })
+  const repositoryActivity = activeProjects.map(p => ({ directory: p.directory,
+    days: boundaries.slice(0, dayCount).map((start, i) => {
+      const commits = uniqueCommits.filter(c => c.repository === (p.repository ?? p.directory) && c.time >= start && c.time < boundaries[i + 1]!)
+      const recorded = commits.filter(c => c.stats)
+      return { available: p.gitAvailable ?? false, commits: commits.length,
+        files: new Set(commits.flatMap(c => c.files)).size,
+        added: recorded.reduce((n, c) => n + c.stats!.added, 0), deleted: recorded.reduce((n, c) => n + c.stats!.deleted, 0),
+        binary: recorded.reduce((n, c) => n + c.stats!.binary, 0), missingStats: commits.length - recorded.length }
+    }) }))
   const data = { week: d.week, timezone: d.timezone, theme, projects, sessions, blocks, daily,
+    repositoryActivity,
     ...(d.usage ? { usage: summarizeUsage(d.usage.filter(r => sessions.some(s => s.id === r.session) && r.time >= d.start && r.time < d.end)),
       dailyUsage: boundaries.slice(0, dayCount).map((start, i) => summarizeUsage(d.usage!.filter(r => sessions.some(s => s.id === r.session) && r.time >= start && r.time < boundaries[i + 1]!))) } : {}),
     hours: hours(allRanges), commits: uniqueCommits.filter(c => c.linked.length).length,
