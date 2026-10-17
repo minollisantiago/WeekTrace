@@ -78,7 +78,10 @@ and deleted; missing Git/statistics and binary changes remain explicit. Line cou
 come from committed tree numstats (merge commits compare to their first parent),
 never uncommitted changes or inferred code size. Binary files do not add line counts.
 Session previews and dialogs show confirmed-commit line totals and original Discord
-links. Critique URLs are retained from in-range assistant text or successful shell
+links. Line totals use compact green `+N` and red `-N` badges in heatmap previews,
+session previews, and dialogs, with theme-aware contrast and explicit accessible
+labels. Binary changes and partial/unavailable statistics stay separate.
+Critique URLs are retained from in-range assistant text or successful shell
 output before excerpt truncation, deduplicated, and labeled session-level previews,
 not verified commit diffs. External links are optional to open; the report remains
 offline. Critique previews may expire after seven days. Older evidence needs
