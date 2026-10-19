@@ -1,4 +1,5 @@
 import type { Evidence, Session } from './schema.ts'
+import { samePath } from './paths.ts'
 
 export function clean(text: string, limit = 900) {
   return text.replace(/<system-reminder>[\s\S]*?<\/system-reminder>|<discord-user[^>]*>|<embed>[\s\S]*?<\/embed>/g, '')
@@ -10,7 +11,7 @@ export function clean(text: string, limit = 900) {
 }
 
 export function belongsTo({ session, directory, name }: { session: Session; directory: string; name: string }) {
-  return session.projectDirectory ? session.projectDirectory === directory : session.project === name
+  return session.projectDirectory ? samePath(session.projectDirectory, directory) : session.project === name
 }
 
 export function branchTotals(data: Pick<Evidence, 'projects' | 'sessions' | 'commits'>) {

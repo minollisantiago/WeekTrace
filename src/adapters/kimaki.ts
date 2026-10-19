@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import path from 'node:path'
+import { pathKey, samePath } from '../paths.ts'
 import { command } from './process.ts'
 import { boundary, CalendarError } from '../errors.ts'
 import { projectSchema, type Project } from '../schema.ts'
@@ -29,11 +30,11 @@ export async function registeredProjects(allowlist: string[]): Promise<Project[]
   const projects = registrations.filter(p => p.is_local && p.directory).map(p => projectSchema.parse({
     ...p, directory: path.resolve(p.directory!), folder_name: p.folder_name ?? p.channel_name ?? path.basename(p.directory!),
   }))
-  const selected = projects.filter(p => !allowlist.length || allowlist.includes(p.directory))
-  const missing = allowlist.filter(directory => !selected.some(p => p.directory === directory))
+  const selected = projects.filter(p => !allowlist.length || allowlist.some(directory => samePath(directory, p.directory)))
+  const missing = allowlist.filter(directory => !selected.some(p => samePath(p.directory, directory)))
   if (missing.length) return new CalendarError({ reason: 'A --project path is not locally registered. Check kimaki project list --json and pass registered absolute directories.' })
   if (!selected.length) return new CalendarError({ reason: 'No local projects registered. Register a source with kimaki project add /absolute/path and rerun.' })
-  return [...new Map(selected.map(p => [p.directory, p])).values()]
+  return [...new Map(selected.map(p => [pathKey(p.directory), p])).values()]
 }
 export function discoverApi(output: string): string | null {
   const port = output.match(/OpenCode server (?:on|at) port (\d+)/i)?.[1]

@@ -46,9 +46,17 @@ test('render validates config, curated summaries, filtering and output independe
   const dataDir = await fs.mkdtemp(path.join(root, 'cli-'))
   await fs.mkdir(path.join(dataDir, 'evidence'))
   const evidence = fixture()
+  const project = path.resolve('/synthetic/app')
+  evidence.projects[0]!.directory = project
+  for (const session of evidence.sessions.filter(s => s.project === evidence.projects[0]!.folder_name)) {
+    session.directory = project
+    if (session.projectDirectory) session.projectDirectory = project
+  }
+  evidence.inventory[0]!.project = project
+  evidence.commits[0]!.repository = project
   await fs.writeFile(path.join(dataDir, 'evidence', `${evidence.week}.json`), JSON.stringify(evidence))
   const result = await run({ mode: 'render', cwd: '/', options: { dataDir, week: evidence.week,
-    project: ['/synthetic/app'], excludeSession: ['ses_isolated'] } })
+    project: [project], excludeSession: ['ses_isolated'] } })
   expect(result).not.toBeInstanceOf(Error)
   if (result instanceof Error) throw result
   if (!('html' in result)) throw new Error('Expected rendered output')
@@ -57,9 +65,9 @@ test('render validates config, curated summaries, filtering and output independe
   const html = await fs.readFile(result.html!, 'utf8')
   expect(html).not.toContain('ses_two')
   expect(html).not.toContain('ses_isolated')
-  await fs.writeFile(path.join(dataDir, 'config.json'), JSON.stringify({ timezone: 'UTC', theme: 'Green', projects: ['/synthetic/app'] }))
+  await fs.writeFile(path.join(dataDir, 'config.json'), JSON.stringify({ timezone: 'UTC', theme: 'Green', projects: [project] }))
   const config = await resolveConfig({ cwd: '/', options: { dataDir, week: evidence.week, timezone: evidence.timezone, theme: 'Blue' } })
-  expect(config).toMatchObject({ timezone: evidence.timezone, theme: 'Blue', projects: ['/synthetic/app'] })
+  expect(config).toMatchObject({ timezone: evidence.timezone, theme: 'Blue', projects: [project] })
   const invalid = await run({ mode: 'render', cwd: '/', options: { dataDir, week: evidence.week } })
   expect(invalid).toBeInstanceOf(Error)
   const summary = path.join(dataDir, 'evidence', 'curated.json')

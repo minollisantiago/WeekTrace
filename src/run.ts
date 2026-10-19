@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { samePath } from './paths.ts'
 import { z } from 'zod'
 import { collect } from './collect.ts'
 import { resolveConfig, type Options } from './config.ts'
@@ -35,9 +36,9 @@ export async function run({ mode, options, cwd }: { mode: 'report' | 'collect' |
     sessions: source.sessions.filter(s => !excluded.has(s.id)),
   }
   if (config.projects.length) Object.assign(evidence, {
-    projects: source.projects.filter(p => config.projects.includes(p.directory)),
-    sessions: evidence.sessions.filter(s => config.projects.includes(s.projectDirectory ?? source.projects.find(p => p.folder_name === s.project)?.directory ?? s.directory)),
-    inventory: source.inventory.filter(p => config.projects.includes(p.project)),
+    projects: source.projects.filter(p => config.projects.some(directory => samePath(directory, p.directory))),
+    sessions: evidence.sessions.filter(s => config.projects.some(directory => samePath(directory, s.projectDirectory ?? source.projects.find(p => p.folder_name === s.project)?.directory ?? s.directory))),
+    inventory: source.inventory.filter(p => config.projects.some(directory => samePath(directory, p.project))),
   })
   if (!evidence.projects.length) return new CalendarError({ reason: 'No selected projects in cached evidence. Rerun collect with the same --project filters.' })
   if (config.projects.length || excluded.size) {

@@ -10,6 +10,7 @@ import { documentedApi, getJson } from './opencode.ts'
 import { normalizeSession } from '../collect.ts'
 import { collectGit } from './git.ts'
 import { fixture } from '../fixtures.ts'
+import { samePath } from '../paths.ts'
 
 test('server discovery selects OpenCode port rather than database port', () => {
   expect(discoverApi('Opening database via http://127.0.0.1:29988\nDiscovered existing OpenCode server on port 43981 via hrana lock port 29988'))
@@ -55,9 +56,10 @@ test('documented routes and truncation headers constrain API collection', async 
 test('Git collection uses commit tree diffs and deduplicable common worktree identity', async () => {
   const parent = path.resolve('weeks/.verification')
   await fs.mkdir(parent, { recursive: true })
-  const repo = await fs.mkdtemp(path.join(parent, 'git-'))
+  const repo = await fs.mkdtemp(path.join(parent, 'git space ñ-'))
   const exec = util.promisify(childProcess.execFile)
   await exec('git', ['init', '-b', 'feature', repo])
+  await exec('git', ['-C', repo, 'config', 'core.autocrlf', 'false'])
   await fs.writeFile(path.join(repo, 'feature.txt'), 'committed\n')
   await exec('git', ['-C', repo, 'add', 'feature.txt'])
   const evidence = fixture()
@@ -67,19 +69,28 @@ test('Git collection uses commit tree diffs and deduplicable common worktree ide
   const result = await collectGit({ project: { ...evidence.projects[0]!, directory: repo }, sessions: [{ ...evidence.sessions[0]!, recordedHashes: [] }], start: evidence.start, end: evidence.end })
   expect(result).not.toBeInstanceOf(Error)
   if (result instanceof Error) return
-  expect(result.repository).toBe(repo)
+  expect(result.repository).toBe(await fs.realpath(repo))
+  const canonicalRepo = await fs.realpath(repo)
+  expect(result.worktrees.some(directory => samePath(directory, canonicalRepo))).toBe(true)
   expect(result.commits[0]?.files).toEqual(['feature.txt'])
   expect(result.commits[0]?.stats).toEqual({ added: 1, deleted: 0, binary: 0 })
   expect(result.commits[0]?.linked).toEqual([{ id: 'ses_one', basis: 'Session trailer' }])
   await fs.writeFile(path.join(repo, 'feature.txt'), 'replacement\nsecond\n')
-  await fs.writeFile(path.join(repo, 'tab\tname.txt'), 'one\ntwo\n')
+  const unusualName = process.platform === 'win32' ? 'space ñ name.txt' : 'tab\tname.txt'
+  await fs.writeFile(path.join(repo, unusualName), 'one\ntwo\n')
   await fs.writeFile(path.join(repo, 'binary.bin'), Buffer.from([0, 1, 2, 0]))
-  await exec('git', ['-C', repo, 'add', 'feature.txt', 'tab\tname.txt', 'binary.bin'])
+  await exec('git', ['-C', repo, 'add', 'feature.txt', unusualName, 'binary.bin'])
   await exec('git', ['-C', repo, '-c', 'user.name=Synthetic', '-c', 'user.email=synthetic@example.invalid', '-c', 'commit.gpgsign=false',
     'commit', '-m', 'Stats'], { env: { ...process.env, GIT_AUTHOR_DATE: '2026-10-05T13:00:00Z', GIT_COMMITTER_DATE: '2026-10-05T13:00:00Z' } })
   const changed = await collectGit({ project: { ...evidence.projects[0]!, directory: repo }, sessions: [], start: evidence.start, end: evidence.end })
   if (changed instanceof Error) throw changed
   expect(changed.commits.find(c => c.subject === 'Stats')?.stats).toEqual({ added: 4, deleted: 1, binary: 1 })
+  const worktree = path.join(repo, 'linked worktree ñ')
+  await exec('git', ['-C', repo, 'worktree', 'add', '-b', 'linked', worktree])
+  const linked = await collectGit({ project: { ...evidence.projects[0]!, directory: worktree }, sessions: [], start: evidence.start, end: evidence.end })
+  if (linked instanceof Error) throw linked
+  expect(linked.repository).toBe(result.repository)
+  expect(linked.worktrees.some(directory => samePath(directory, worktree))).toBe(true)
 })
 test('Critique evidence retains only in-range assistant previews and successful shell output, without inferring commit links', () => {
   const evidence = fixture(), start = evidence.start, url = 'https://critique.work/v/synthetic-diff'

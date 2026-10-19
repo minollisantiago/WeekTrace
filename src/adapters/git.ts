@@ -66,7 +66,7 @@ export async function collectGit({ project, sessions, start, end }: {
     }
     commits.push({ repository, hash: hash!, time, subject: clean(subject!),
       ...(stats ? { stats } : {}),
-      files: files instanceof Error ? [] : files.stdout.trim().split('\n').filter(s => s.length > 0), linked, possible })
+       files: files instanceof Error ? [] : files.stdout.trim().split(/\r?\n/).filter(s => s.length > 0), linked, possible })
   }
   for (const s of sessions) {
     for (const hash of s.recordedHashes) {
@@ -74,5 +74,5 @@ export async function collectGit({ project, sessions, start, end }: {
       if (matches.length !== 1) gaps.push(`${s.id}: recorded commit ${hash} is ${matches.length ? 'ambiguous' : 'unavailable in retained in-week Git history'}.`)
     }
   }
-  return { repository, worktrees: [...trees.stdout.matchAll(/^worktree (.*)$/gm)].map(m => m[1]!), commits, gaps, resolvedHashes }
+  return { repository, worktrees: trees.stdout.split(/\r?\n/).filter(line => line.startsWith('worktree ')).map(line => line.slice(9)), commits, gaps, resolvedHashes }
 }

@@ -4,6 +4,7 @@ import { apiSessionSchema, messagesSchema } from './opencode.ts'
 import { CalendarError } from '../errors.ts'
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { pathKey } from '../paths.ts'
 import os from 'node:os'
 import { tokensSchema } from '../usage.ts'
 
@@ -102,7 +103,7 @@ export async function v2Inventory(directory: string) {
   // to whichever project happened to be collected first.
   const worktrees = await command({ executable: 'git', args: ['-C', directory, 'worktree', 'list', '--porcelain'] })
   const directories = new Set([path.resolve(directory)])
-  if (!(worktrees instanceof Error)) for (const line of worktrees.stdout.split('\n')) {
+  if (!(worktrees instanceof Error)) for (const line of worktrees.stdout.split(/\r?\n/)) {
     if (line.startsWith('worktree ')) directories.add(path.resolve(line.slice(9)))
   }
   const sessions = new Map<string, z.infer<typeof sessionSchema>>()
@@ -113,7 +114,7 @@ export async function v2Inventory(directory: string) {
     if (!parsed.success) return new CalendarError({ reason: 'Unsupported OpenCode V2 session shape.' })
     for (const s of parsed.data) {
       const location = path.resolve(s.location.directory)
-      if ([...directories].some(dir => location === dir || location.startsWith(dir + path.sep))) sessions.set(s.id, s)
+       if ([...directories].some(dir => pathKey(location) === pathKey(dir) || pathKey(location).startsWith(pathKey(dir).replace(/[\\/]+$/, '') + path.sep))) sessions.set(s.id, s)
     }
   }
   return { scope: !(worktrees instanceof Error), limit: Infinity, allMessages: true,
