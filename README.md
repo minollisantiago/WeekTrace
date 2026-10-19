@@ -16,10 +16,40 @@ the private local package and CLI name. Source lives at
 Registry availability is not yet checked; the project license remains undecided.
 The bundled font retains its SIL Open Font License.
 
+## Set up with a coding agent
+
+**WeekTrace is a companion to OpenCode and Kimaki, not a standalone activity
+tracker.** You need both installed and must actually use them for your development
+work. It reports retained local OpenCode sessions in locally registered Kimaki
+projects; installing WeekTrace cannot reconstruct activity that was never recorded.
+Git history alone is not enough to produce session activity totals.
+
+Give an agent with local terminal/filesystem access this prompt:
+
+```text
+Set up WeekTrace from https://github.com/minollisantiago/WeekTrace on this machine.
+Read the repository's AGENTS.md and docs/agent-setup.md and follow the setup
+procedure. First check whether I have and actually use OpenCode and Kimaki;
+explain any missing prerequisites before proceeding. Use my native OS and keep
+Windows and WSL installations separate. Ask for my reporting timezone and source
+projects if they aren't already configured. Build and verify the local CLI,
+generate a report from real retained activity, and give me its absolute HTML path
+and a reusable command. Explain coverage gaps. Configure scheduling or Discord
+delivery only if I request it, and preserve existing routines and personal files.
+```
+
+See [agent setup and platform verification](docs/agent-setup.md) for prerequisites,
+completion criteria, and a native Windows smoke-test checklist.
+
 ## 1. Install and run locally
 
 Requirements: **Node.js 22+**, Git, the Kimaki CLI, and access to local OpenCode
 servers retaining the sessions to report.
+
+The build and CLI have native Windows support changes and Linux/Windows CI
+coverage configured. Native Windows collection still requires a real-machine
+smoke test before it is considered verified. macOS remains unverified.
+Generated HTML reports can be opened offline on all three platforms.
 
 ```sh
 git clone https://github.com/minollisantiago/WeekTrace.git
@@ -31,6 +61,20 @@ node dist/cli.js report --week 2026-10-05 --project /absolute/path/to/repo
 node dist/cli.js report --last-days 7
 node dist/cli.js report --from 2026-10-07 --to 2026-10-13
 ```
+
+On **native Windows**, run the same commands in PowerShell with Node.js and Git
+on `PATH`; WSL, Git Bash, and Python are not required. Quote paths with spaces:
+
+```powershell
+node .\dist\cli.js report --last-days 7 --timezone "Europe/London" --project "C:\Users\YourName\My Project"
+```
+
+Replace the example timezone and registered project path with your own. Runtime
+storage defaults to `.calendar` inside your OS home directory, such as
+`C:\Users\YourName\.calendar`. JSON configuration paths must use escaped
+backslashes (`"C:\\Users\\YourName\\My Project"`) or forward slashes.
+Run WeekTrace in the same environment as your Kimaki/OpenCode activity: a Windows
+installation does not automatically discover WSL registrations or translate paths.
 
 These source commands run from the checkout root. From another working directory,
 use the absolute executable path, for example
