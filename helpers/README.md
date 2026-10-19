@@ -97,6 +97,8 @@ current idle status is not a completion assertion.
 The template uses safe embedded JSON and DOM text nodes, no frameworks, remote
 assets, or service. JetBrains Mono is embedded from `fonts/JetBrainsMono-Regular.woff2`
 with its SIL Open Font License included in the HTML; no font request is needed.
+All report text uses JetBrains Mono, including previews and technical metadata.
+Dialog event titles use 22px; compact hover-preview titles remain 18px.
 Compact blocks hide their labels using size container queries and reveal details
 on hover or keyboard focus. Event previews in the grid and agenda use structured
 theme-aware cards with a bold title, muted date/time/duration line, a project pill, models,
