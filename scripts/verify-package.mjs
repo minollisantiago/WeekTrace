@@ -1,15 +1,13 @@
 // Local tarball verification. All generated files stay under ignored weeks/.
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import childProcess from 'node:child_process'
-import util from 'node:util'
+import { runCommand as execFile } from '../dist/adapters/process.js'
 import { fixture } from '../dist/fixtures.js'
 
-const execFile = util.promisify(childProcess.execFile)
 const root = path.resolve(import.meta.dirname, '..')
 const parent = path.join(root, 'weeks', '.verification')
 await fs.mkdir(parent, { recursive: true })
-const tmp = await fs.mkdtemp(path.join(parent, 'package-'))
+const tmp = await fs.mkdtemp(path.join(parent, 'package space ñ-'))
 // Stop npm's ancestor project discovery at this isolated consumer directory.
 await fs.writeFile(path.join(tmp, 'package.json'), JSON.stringify({ name: 'calendar-package-consumer', private: true, type: 'module' }))
 const originalManifest = await fs.readFile(path.join(root, 'package.json'), 'utf8')
