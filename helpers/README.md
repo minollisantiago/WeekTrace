@@ -105,6 +105,11 @@ The usage row groups models, event tokens, and a partial marker when some calls
 lack usage. The project pill shares a row with the original Discord link (↗);
 commit/file counts and added/removed line badges share the next row. Critique links
 remain separate, with their preview/expiry disclaimer only in the full dialog.
+Event dialogs reuse that exact header, including the project/Discord row and
+commit/file/line statistics. Token categories use a compact table with event and
+selected-range session columns; unavailable counts stay unavailable, and reasoning
+remains separate from the additive total. Prompt, outcome, and commit sections
+have clear dividers; technical source metadata and preview caveats are collapsed.
 Only confirmed session commits supply these counts; possible matches are excluded.
 Previews sit to the right when space allows and fit above/below on narrow screens,
 remain open when hovered, and dismiss with Escape or scrolling. Touch opens the inspection
