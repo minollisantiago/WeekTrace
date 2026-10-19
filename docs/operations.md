@@ -10,7 +10,7 @@
   servers through CLI output, verifies `/doc`, and uses documented GET APIs.
 - Default source scope is all local registrations; repeatable `--project` selects
   registered source directories. Git alone cannot establish session durations.
-- Reporting timezone is configurable, with Buenos Aires retained as the default.
+- Reporting timezone is configurable, defaulting to the system's IANA timezone.
 - Generation is deterministic given evidence, configuration, summary, and colors.
 - Agent-written narratives, browser checks, scheduling, and uploads are orchestration.
 - The private local package is installable from a tarball; registry publication is deferred.
@@ -113,16 +113,27 @@
     explicit follow-ups, and coverage gaps. Explain that the downloaded HTML opens
     directly in a browser.
 
-## Scheduling and existing deployment
+## Scheduling and personal deployment
 
 Kimaki recurring prompts or OS cron/task schedulers invoke the same CLI. Kimaki cron
 is UTC; report-date boundaries are local and DST-aware. Choose the scheduler time
 separately from the reporting timezone, with no assumption that missed runs replay.
 
-Existing task #1 remains in TsCanvas, reads its task file there, and runs Monday
-`0 12 * * 1`. Its task instructions permit similarly lightweight tooling, so the
-Node CLI can be invoked from the delivery project using its absolute path. The
-task definition and schedule are preserved; retargeting requires explicit approval.
+Personal routine instructions belong in the Git-ignored `routines/` directory.
+Start from `examples/routines/`, resolve placeholders for this installation, and
+configure a scheduler only when requested. Preserve local routine files and their
+paths during upgrades. Inspect `kimaki routine list` before changing automation;
+verify destination, schedule, prompt, and concurrency after any migration.
+
+The scheduler destination selects delivery only; all registered source projects
+remain included unless explicitly filtered. Choose the user's destination rather
+than a channel named in historical instructions. If destination editing is not
+supported, create one replacement and remove the old routine before the next run;
+preserve its schedule and options and verify that only one remains.
+
+Optional browser opening and 48-hour report retention are described in the shared
+task. Enable them only when requested. Browser-launch failures are separate from
+attachment failures; failed attachment delivery preserves reports for retry.
 
 For a new deployment, install the local tarball, configure source registrations and
 timezone, verify an explicit week and a previous-week invocation, then configure
@@ -136,7 +147,7 @@ preferences, attach without guessing an owner.
 
 ## Run from a delivery project
 
-When the agent's working directory is TsCanvas or another delivery project, use
+When the agent's working directory is another delivery project, use
 the built CLI's absolute path rather than a relative `dist/cli.js`:
 
 ```sh

@@ -16,10 +16,11 @@ const packedInfo = JSON.parse(packed.stdout)
 const info = Array.isArray(packedInfo) ? packedInfo[0] : packedInfo[JSON.parse(originalManifest).name]
 if (!info?.filename || !Array.isArray(info.files)) throw new Error('Unsupported npm pack JSON response')
 const files = info.files.map(f => f.path)
-const forbidden = files.filter(f => /^(evidence\/|weeks\/|preferences\.json$|local-profile\.json$|config\.json$|\.env)/.test(f))
+const forbidden = files.filter(f => /^(routines\/|evidence\/|weeks\/|preferences\.json$|local-profile\.json$|config\.json$|\.env)/.test(f))
 if (forbidden.length) throw new Error(`Runtime files in tarball: ${forbidden.join(', ')}`)
 if (files.some(f => /\.py(?:[co])?$/.test(f))) throw new Error('Retired Python files in tarball')
-for (const asset of ['assets/weektrace.svg', 'helpers/template.html', 'fonts/JetBrainsMono-Regular.woff2', 'fonts/OFL.txt', 'dist/cli.js']) {
+for (const asset of ['assets/weektrace.svg', 'helpers/template.html', 'fonts/JetBrainsMono-Regular.woff2', 'fonts/OFL.txt', 'dist/cli.js',
+  'examples/routines/weekly-work-calendar.md', 'examples/routines/daily-work-calendar.md']) {
   if (!files.includes(asset)) throw new Error(`Missing asset: ${asset}`)
 }
 const tarball = path.join(tmp, info.filename)
@@ -29,7 +30,7 @@ await fs.mkdir(path.join(dataDir, 'evidence'), { recursive: true })
 const evidence = fixture()
 await fs.writeFile(path.join(dataDir, 'evidence', `${evidence.week}.json`), JSON.stringify(evidence))
 await fs.access(path.join(tmp, 'node_modules', 'weektrace', 'dist', 'cli.js'))
-const result = await execFile('npx', ['--no-install', '--offline', '--', 'weektrace', 'render', '--week', evidence.week, '--data-dir', dataDir], { cwd: tmp })
+const result = await execFile('npx', ['--no-install', '--offline', '--', 'weektrace', 'render', '--week', evidence.week, '--timezone', evidence.timezone, '--data-dir', dataDir], { cwd: tmp })
 if (await fs.readFile(path.join(root, 'package.json'), 'utf8') !== originalManifest) throw new Error('Consumer installation modified source package metadata')
 const output = JSON.parse(result.stdout)
 const html = await fs.readFile(output.html, 'utf8')

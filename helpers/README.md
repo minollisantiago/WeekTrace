@@ -37,7 +37,7 @@ node ~/.calendar/dist/cli.js render --previous-week --exclude-session CURRENT_RU
 ```
 
 Use `--week YYYY-MM-DD` for an explicit reporting Monday; `--timezone` overrides
-the default America/Argentina/Buenos_Aires.
+the configured timezone (or system timezone when unconfigured).
 Custom date selections use `--from YYYY-MM-DD --to YYYY-MM-DD` (inclusive, 1–7
 days), or `--last-days N` (1–7 days including today). The grid, agenda, day selector,
 and daily bars show only the selected dates with timezone-correct weekdays.

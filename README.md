@@ -117,7 +117,7 @@ Shared flags:
 | `--week YYYY-MM-DD` / `--previous-week` | Explicit Monday or previous complete week |
 | `--from YYYY-MM-DD --to YYYY-MM-DD` | Inclusive custom range of 1–7 calendar days |
 | `--last-days N` | Last 1–7 calendar days including today |
-| `--timezone ZONE` | IANA timezone; defaults to `America/Argentina/Buenos_Aires` |
+| `--timezone ZONE` | IANA timezone; defaults to the system timezone |
 | `--project PATH` | Repeatable registered source-directory filter; omitted includes all local projects |
 | `--data-dir PATH` | Runtime storage; defaults to `~/.calendar` |
 | `--output-dir PATH` | HTML/Markdown destination; defaults to `DATA_DIR/weeks` |
@@ -264,7 +264,7 @@ historical branches, and coverage semantics.
 
 Source assets remain in `helpers/template.html` and `fonts/`; the installed CLI
 resolves them relative to its package, independently of cwd and runtime storage.
-Personal `evidence/`, `weeks/`, `preferences.json`, `config.json`, and
+Personal `routines/`, `evidence/`, `weeks/`, `preferences.json`, `config.json`, and
 `local-profile.json` are ignored and excluded from the tarball.
 
 ## 5. Local npm installation and npx execution
@@ -288,10 +288,11 @@ agent run `collect`, supply an evidenced summary, then `render` and upload.
 Scheduling remains external to the CLI. Kimaki cron expressions are UTC;
 reporting-week boundaries use the configured local timezone and account for DST.
 
-**Existing task #1 stays in TsCanvas**, on its existing Monday `0 12 * * 1`
-schedule and task file. Its instructions permit lightweight tooling; use the Node
-CLI via its absolute path when running from a delivery project. The task and
-default runtime layout are preserved.
+Copy a template from `examples/routines/` into ignored `routines/` and personalize
+its paths and timezone. Store optional owner/delivery preferences in ignored
+`local-profile.json`. Confirm the delivery channel and UTC schedule before creating
+automation; neither is a project default. Delivery does not filter source projects.
+Preserve existing personal routine files and schedules during upgrades.
 
 Read [operations](docs/operations.md) before generating or attaching a report.
 

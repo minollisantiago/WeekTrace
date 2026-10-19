@@ -20,7 +20,7 @@ Query available actual message/tool times, not Kimaki's SQLite storage.
 
 ## Time
 
-Reports use the configured IANA timezone (default America/Argentina/Buenos_Aires):
+Reports use the configured IANA timezone (default the system timezone):
 weekly mode starts inclusive at Monday 00:00 and ends exclusive at the next Monday
 00:00. Custom ranges include both requested dates and contain 1–7 calendar days;
 their end is exclusive at midnight after the last date. Rolling `--last-days N`

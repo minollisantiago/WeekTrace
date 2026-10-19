@@ -100,7 +100,7 @@ hosted at [minollisantiago/WeekTrace](https://github.com/minollisantiago/WeekTra
 with repository/homepage/issue metadata configured. No public registry command is
 documented as available.
 
-Scheduling and delivery remain Kimaki/OS orchestration. Existing task #1 in TsCanvas
-is preserved. Its task file permits equivalent lightweight tooling; the Node CLI
-works from that delivery project with an absolute executable path. A schedule/task
-retargeting still requires explicit approval.
+Scheduling and delivery remain Kimaki/OS orchestration. Personal routine files live
+in ignored `routines/`; reusable templates live in `examples/routines/`. The Node
+CLI works from any delivery project with an absolute executable path. Scheduler
+changes require explicit approval and must preserve unrelated routines.

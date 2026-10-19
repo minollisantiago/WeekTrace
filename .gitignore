@@ -20,4 +20,5 @@ dist/
 *.tsbuildinfo
 *.tgz
 /config.json
+/routines/
 /weeks-*/

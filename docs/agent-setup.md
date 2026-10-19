@@ -58,6 +58,10 @@ Read existing runtime configuration first. Ask for the reporting IANA timezone
 when none is configured; confirm the source projects, with all local registrations
 as the offered default. Keep the checkout and personal runtime storage distinct
 when appropriate. The default runtime directory is `.calendar` in the OS home.
+Unconfigured reports use the system timezone. Save an explicit `timezone` in
+`config.json` for stable scheduled reporting, especially when moving between hosts.
+Keep personal automation in ignored `routines/`, using `examples/routines/` as
+templates; owner and delivery preferences belong in ignored `local-profile.json`.
 Preserve unrelated settings, evidence, reports, and delivery preferences.
 
 Use quoted absolute native paths. Windows JSON paths can use forward slashes or
