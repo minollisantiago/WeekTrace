@@ -1,4 +1,5 @@
-import fs from 'node:fs/promises'
+import { writeSync } from 'node:fs'
+import path from 'node:path'
 import { afterEach, expect, test, vi } from 'vitest'
 import { registrationSchema, parseJsonOutput, registeredProjects, recentSessions } from './kimaki.ts'
 import { normalizeV2Messages, readPages, v2Inventory } from './opencode-v2.ts'
@@ -23,7 +24,7 @@ test('current Kimaki metadata preserves nested thread IDs and local project filt
   vi.mocked(command).mockResolvedValueOnce({ stdout: JSON.stringify([
     { directory: '/current', channelId: 'channel', guildId: null },
   ]), stderr: '' } as never)
-  expect(await registeredProjects(['/current'])).toEqual([{ directory: '/current', folder_name: 'current', is_local: true, guild_id: '' }])
+  expect(await registeredProjects(['/current'])).toEqual([{ directory: path.resolve('/current'), folder_name: 'current', is_local: true, guild_id: '' }])
   vi.mocked(command).mockResolvedValueOnce({ stdout: JSON.stringify([
     { id: 'ses_current', status: 'idle', metadata: { kimaki: { threadId: '123' } } },
   ]), stderr: '' } as never)
@@ -87,21 +88,39 @@ test('V2 standalone shell messages keep commit evidence but failed shells do not
 
 test('V2 inventory uses authenticated file output and Git worktrees, not shared project IDs', async () => {
   const routes: string[] = []
-  vi.mocked(command).mockImplementation(async ({ executable, args }) => {
+  vi.mocked(command).mockImplementation(async ({ executable, args, stdoutFile }) => {
     if (executable === 'git') return { stdout: 'worktree /current\n\nworktree /worktree\n', stderr: '' } as never
-    expect(executable).toBe('sh')
-    expect(args[1]).toBe('opencode api get "$1" > "$2"')
-    const route = args[3]!, file = args[4]!
+    expect(executable).toBe('opencode')
+    expect(args.slice(0, 2)).toEqual(['api', 'get'])
+    expect(stdoutFile).toEqual(expect.any(Number))
+    const route = args[2]!
     routes.push(route)
     const session = (id: string, directory: string) => ({ id, title: id, projectID: 'project', location: { directory }, time: { created: 1, updated: 2 } })
     const get = (names: string[]) => ({ get: { parameters: names.map(name => ({ name, in: 'query' })) } })
     const data = route === '/openapi.json' ? { paths: { '/api/session': get(['directory', 'project', 'limit', 'cursor', 'order']), '/api/session/{sessionID}/message': get(['limit', 'cursor', 'order']) } }
       : { data: route.includes('worktree') ? [session('child', '/worktree'), session('unrelated', '/unrelated')] : [session('root', '/current')], cursor: { next: null } }
-    await fs.writeFile(file, JSON.stringify(data))
+    writeSync(stdoutFile!, JSON.stringify(data))
     return { stdout: '', stderr: '' } as never
   })
   const inventory = await v2Inventory('/current')
   expect(inventory).toMatchObject({ scope: true, allMessages: true, sessions: [{ id: 'root', directory: '/current' }, { id: 'child', directory: '/worktree' }] })
-  expect(routes.some(route => route.includes('directory=%2Fworktree'))).toBe(true)
+  expect(routes.some(route => new URL(route, 'http://local').searchParams.get('directory') === path.resolve('/worktree'))).toBe(true)
   expect(routes.some(route => route.includes('project='))).toBe(false)
+})
+
+test('project discovery includes every local registration and applies only requested filters', async () => {
+  const registrations = [
+    { directory: '/one', is_local: true },
+    { directory: '/two', is_local: true },
+    { directory: '/remote', is_local: false },
+  ]
+  vi.mocked(command).mockResolvedValue({ stdout: JSON.stringify(registrations), stderr: '' } as never)
+  const all = await registeredProjects([])
+  if (all instanceof Error) throw all
+  expect(all.map(project => project.directory)).toEqual([path.resolve('/one'), path.resolve('/two')])
+  const filtered = await registeredProjects([path.resolve('/two')])
+  if (filtered instanceof Error) throw filtered
+  expect(filtered.map(project => project.directory)).toEqual([path.resolve('/two')])
+  expect(await registeredProjects([path.resolve('/missing')])).toBeInstanceOf(Error)
+  expect(command).toHaveBeenCalledWith({ executable: 'kimaki', args: ['project', 'list', '--json'] })
 })

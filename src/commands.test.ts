@@ -24,7 +24,7 @@ test('custom cached ranges use distinct filenames and reject mismatched boundari
   const root = path.resolve('weeks/.verification')
   await fs.mkdir(root, { recursive: true })
   const dataDir = await fs.mkdtemp(path.join(root, 'range-cli-'))
-  const options = { dataDir, from: '2026-10-05', to: '2026-10-06' }
+  const options = { dataDir, from: '2026-10-05', to: '2026-10-06', timezone: fixture().timezone }
   const config = await resolveConfig({ options, cwd: '/' })
   if (config instanceof Error) throw config
   expect(config.reportKey).toBe('2026-10-05_to_2026-10-06')
@@ -56,7 +56,7 @@ test('render validates config, curated summaries, filtering and output independe
   evidence.commits[0]!.repository = project
   await fs.writeFile(path.join(dataDir, 'evidence', `${evidence.week}.json`), JSON.stringify(evidence))
   const result = await run({ mode: 'render', cwd: '/', options: { dataDir, week: evidence.week,
-    project: [project], excludeSession: ['ses_isolated'] } })
+    timezone: evidence.timezone, project: [project], excludeSession: ['ses_isolated'] } })
   expect(result).not.toBeInstanceOf(Error)
   if (result instanceof Error) throw result
   if (!('html' in result)) throw new Error('Expected rendered output')

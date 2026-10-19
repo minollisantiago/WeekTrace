@@ -4,9 +4,9 @@ import { CalendarError } from '../errors.ts'
 
 // cross-spawn resolves Windows npm .cmd shims and escapes their arguments.
 // Do not enable a shell globally: native binaries must receive literal arguments.
-export function runCommand(executable: string, args: string[], options: SpawnOptions = {}) {
+export function runCommand(executable: string, args: string[], options: SpawnOptions = {}, stdoutFile?: number) {
   return new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
-    const child = spawn(executable, args, { ...options, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true })
+    const child = spawn(executable, args, { ...options, stdio: ['ignore', stdoutFile ?? 'pipe', 'pipe'], windowsHide: true })
     const stdout: Buffer[] = [], stderr: Buffer[] = []
     let bytes = 0
     const timer = setTimeout(() => fail(new Error(`${executable} timed out`)), 180_000)
@@ -20,7 +20,7 @@ export function runCommand(executable: string, args: string[], options: SpawnOpt
       if (bytes > 64 * 1024 * 1024) return fail(new Error(`${executable} output exceeded limit`))
       chunks.push(chunk)
     }
-    child.stdout!.on('data', capture(stdout))
+    child.stdout?.on('data', capture(stdout))
     child.stderr!.on('data', capture(stderr))
     child.on('error', fail)
     child.on('close', (code, signal) => {
@@ -31,7 +31,7 @@ export function runCommand(executable: string, args: string[], options: SpawnOpt
     })
   })
 }
-export async function command({ executable, args }: { executable: string; args: string[] }) {
-  return runCommand(executable, args)
+export async function command({ executable, args, stdoutFile }: { executable: string; args: string[]; stdoutFile?: number }) {
+  return runCommand(executable, args, {}, stdoutFile)
     .catch(cause => new CalendarError({ reason: `${executable} failed. Check that it is installed and the source is accessible; rerun the command.`, cause }))
 }

@@ -39,7 +39,9 @@ async function request(route: string) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'weektrace-api-'))
   const file = path.join(root, 'response.json')
   try {
-    const result = await command({ executable: 'sh', args: ['-c', 'opencode api get "$1" > "$2"', 'weektrace', route, file] })
+    const output = await fs.open(file, 'w')
+    const result = await command({ executable: 'opencode', args: ['api', 'get', route], stdoutFile: output.fd })
+      .finally(() => output.close())
     if (result instanceof Error) return result
     return JSON.parse(await fs.readFile(file, 'utf8')) as unknown
   } catch { return new CalendarError({ reason: 'OpenCode V2 returned invalid JSON. Check opencode api get /api/info.' }) }

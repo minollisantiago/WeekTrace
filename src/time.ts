@@ -1,7 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill'
 import { boundary, CalendarError } from './errors.ts'
 
-export const DEFAULT_TIMEZONE = 'America/Argentina/Buenos_Aires'
+export const DEFAULT_TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone
 export const GAP = 30 * 60_000
 export type Range = [number, number]
 

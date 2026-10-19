@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'vitest'
-import { hours, intervals, merge, midnight, resolveWeek, resolveRange, dayBoundaries, splitDays, DEFAULT_TIMEZONE } from './time.ts'
+import { hours, intervals, merge, midnight, resolveWeek, resolveRange, dayBoundaries, splitDays } from './time.ts'
 import { safeJson } from './render.ts'
+
+// Boundary expectations use a fixed zone, independently of the host default.
+const DEFAULT_TIMEZONE = 'America/Argentina/Buenos_Aires'
 
 describe('Timing baseline cases', () => {
   test('overlaps and adjacent intervals count once', () => {
