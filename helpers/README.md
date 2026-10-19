@@ -101,6 +101,10 @@ Compact blocks hide their labels using size container queries and reveal details
 on hover or keyboard focus. Event previews in the grid and agenda use structured
 theme-aware cards with a bold title, muted date/time/duration line, a project pill, models,
 commit and unique changed-file counts, first prompt and up to three commit subjects.
+The usage row groups models, event tokens, and a partial marker when some calls
+lack usage. The project pill shares a row with the original Discord link (↗);
+commit/file counts and added/removed line badges share the next row. Critique links
+remain separate, with their preview/expiry disclaimer only in the full dialog.
 Only confirmed session commits supply these counts; possible matches are excluded.
 Previews sit to the right when space allows and fit above/below on narrow screens,
 remain open when hovered, and dismiss with Escape or scrolling. Touch opens the inspection
