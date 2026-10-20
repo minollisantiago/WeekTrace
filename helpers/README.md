@@ -11,6 +11,9 @@ Input/output/cache counts are additive; reasoning is shown separately. Missing
 usage is unavailable or partial, never fabricated zero. Represented subagent calls
 are counted under their parent without inflating hours. Calls outside parent blocks
 remain in session/sidebar totals. Old evidence needs recollection for usage.
+Repository commits and Delegated calls keep their explanatory text in question-mark
+tooltips beside the section titles, available by hover, keyboard focus, or tap.
+Escape and scrolling dismiss them, using the same offline preview as event cards.
 The sidebar puts Activity by day directly below Estimated session activity. Token
 totals use compact numbers without inline partial labels; a collapsed Token usage
 breakdown provides category counts and missing-usage coverage. Tokens by day uses
