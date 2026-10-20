@@ -125,7 +125,10 @@ commits; all calendar and agenda event cards are borderless.
 The segmented accent picker and sun/moon appearance toggle sit in the header's
 top-right corner alongside an inline GitHub icon linking to the WeekTrace repository
 in a new tab, aligned to the summary card's right edge. On narrow phones they
-wrap below the activity heading and totals, retaining that right alignment.
+live in a hamburger-triggered native popover at the top right, together with the
+logo. The popover supports outside-click/Escape dismissal and keyboard focus;
+desktop controls remain inline. Resizing closes the popover and restores the
+appropriate layout without duplicating controls or losing theme selections.
 It offers a lighter Pink `#F77C9D` (default), Lavender
 `#B1A7F2`, Blue `#88C1F2`, Green `#8FD9AF`, and Peach `#F2BE7E`. It updates
 activity bars, active controls, links, and the inspection border.
