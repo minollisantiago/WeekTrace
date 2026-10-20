@@ -118,7 +118,8 @@ remain open when hovered, and dismiss with Escape or scrolling. Touch opens the 
 dialog directly. Striped grid fills distinguish sessions without confirmed linked
 commits; all calendar and agenda event cards are borderless.
 The segmented accent picker and sun/moon appearance toggle sit in the header's
-top-right corner, aligned to the summary card's right edge. On narrow phones they
+top-right corner alongside an inline GitHub icon linking to the WeekTrace repository
+in a new tab, aligned to the summary card's right edge. On narrow phones they
 wrap below the activity heading and totals, retaining that right alignment.
 It offers a lighter Pink `#F77C9D` (default), Lavender
 `#B1A7F2`, Blue `#88C1F2`, Green `#8FD9AF`, and Peach `#F2BE7E`. It updates
