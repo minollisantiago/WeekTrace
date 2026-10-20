@@ -2,7 +2,9 @@
 
 The shared template embeds WeekTrace's approved handwritten W as its favicon, without
 a branding banner above the calendar; the editable mark is `assets/weektrace.svg`. Brand rose stays `#F23568`, independently
-of the report's five selectable theme accents. See `docs/branding.md`.
+of the report's five selectable theme accents. The handwritten mark sits at the
+right of the top-right appearance controls beside the GitHub button, including on phones,
+without a visible wordmark, banner or tagline. See `docs/branding.md`.
 
 Token usage appears on tall calendar blocks, hover previews, phone agenda cards,
 inspection dialogs and the sidebar (range and project totals). Event counts use
